@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Biga — Pizza Dough Calculator</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;0,9..144,900;1,9..144,400&family=Karla:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="biga.css" />
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="eyebrow">L'Arte della Biga</div>
+      <h1>The <em>Biga</em> Calculator</h1>
+      <p class="tagline">— a slow preferment for Neapolitan-style dough —</p>
+    </header>
+
+    <div class="grid">
+      <!-- ============ INPUTS ============ -->
+      <div>
+        <!-- Panel 1 -->
+        <div class="panel" style="margin-bottom: 32px;">
+          <span class="panel-number">i.</span>
+          <h2 class="panel-title">The Dough</h2>
+          <p class="panel-sub">how much and how big</p>
+          <div class="number-row">
+            <div class="number-field">
+              <label for="balls">Dough balls</label>
+              <input type="number" id="balls" value="4" min="1" max="100" />
+            </div>
+            <div class="number-field">
+              <label for="ballWeight">Weight (g) each</label>
+              <input type="number" id="ballWeight" value="260" min="100" max="500" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Panel 2 -->
+        <div class="panel" style="margin-bottom: 32px;">
+          <span class="panel-number">ii.</span>
+          <h2 class="panel-title">The Biga</h2>
+          <p class="panel-sub">the heart of the dough</p>
+
+          <div class="datetime-field">
+            <label for="startTime">Knead the biga at</label>
+            <input type="datetime-local" id="startTime" />
+          </div>
+
+          <div class="section">
+            <div class="section-label">
+              <span class="label-text">Biga Hydration</span>
+              <span class="label-value" id="bigaHydVal">50%</span>
+            </div>
+            <input type="range" id="bigaHyd" min="44" max="65" value="50" step="1" />
+            <div class="range-bounds"><span>44%</span><span>65%</span></div>
+          </div>
+
+          <div class="section">
+            <div class="section-label">
+              <span class="label-text">Rest Temperature</span>
+              <span class="label-value" id="tempVal">18°C</span>
+            </div>
+            <input type="range" id="temp" min="0" max="28" value="18" step="1" />
+            <div class="range-bounds"><span>0°C</span><span>28°C</span></div>
+            <div class="temp-hint" id="tempHint"></div>
+          </div>
+
+          <div class="section">
+            <div class="section-label">
+              <span class="label-text">Biga % of Flour</span>
+              <span class="label-value" id="bigaPctVal">70%</span>
+            </div>
+            <input type="range" id="bigaPct" min="20" max="100" value="70" step="1" />
+            <div class="range-bounds"><span>20%</span><span>100%</span></div>
+          </div>
+
+          <!-- Hybrid: kickstart at RT then move to cold -->
+          <div class="section">
+            <label class="toggle-row" id="useRTRow" for="useRT">
+              <span class="toggle-label">
+                Kickstart at room temperature
+                <small>start at RT, then move to cold storage</small>
+              </span>
+              <span class="toggle-switch">
+                <input type="checkbox" id="useRT" />
+                <span class="slider-bg"></span>
+              </span>
+            </label>
+
+            <div id="rtControls" class="controls-collapse">
+              <div class="section">
+                <div class="section-label">
+                  <span class="label-text">Room Temperature</span>
+                  <span class="label-value" id="rtTempVal">22°C</span>
+                </div>
+                <input type="range" id="rtTemp" min="18" max="26" value="22" step="1" />
+                <div class="range-bounds"><span>18°C</span><span>26°C</span></div>
+              </div>
+              <div class="section">
+                <div class="section-label">
+                  <span class="label-text">Hours at Room Temp</span>
+                  <span class="label-value" id="rtHoursVal">1.0 h</span>
+                </div>
+                <input type="range" id="rtHours" min="0.5" max="12" value="1" step="0.5" />
+                <div class="range-bounds"><span>0.5 h</span><span>12 h</span></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pro mode: water temperature (Giorilli formula) -->
+          <div class="section">
+            <label class="toggle-row pro" id="useProRow" for="usePro">
+              <span class="toggle-label">
+                Pro mode: water temperature
+                <small>set flour &amp; water temp via Giorilli's formula</small>
+              </span>
+              <span class="toggle-switch pro">
+                <input type="checkbox" id="usePro" />
+                <span class="slider-bg"></span>
+              </span>
+            </label>
+
+            <div id="proControls" class="controls-collapse pro">
+              <div class="section">
+                <div class="section-label">
+                  <span class="label-text">Flour Temperature</span>
+                  <span class="label-value" id="flourTempVal">20°C</span>
+                </div>
+                <input type="range" id="flourTemp" min="0" max="30" value="20" step="1" />
+                <div class="range-bounds"><span>0°C</span><span>30°C</span></div>
+              </div>
+              <div class="section">
+                <div class="section-label">
+                  <span class="label-text">Water Temperature</span>
+                  <span class="label-value" id="waterTempVal">17°C</span>
+                </div>
+                <input type="range" id="waterTemp" min="0" max="40" value="17" step="1" />
+                <div class="range-bounds"><span>0°C</span><span>40°C</span></div>
+              </div>
+              <div class="pro-readout" id="proReadout"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Biga Results Preview -->
+        <div class="biga-preview">
+          <div class="biga-results-title">Biga Results</div>
+          <div id="bigaPreviewContent"></div>
+        </div>
+
+        <!-- Panel 3 -->
+        <div class="panel">
+          <span class="panel-number">iii.</span>
+          <h2 class="panel-title">The Final Dough</h2>
+          <p class="panel-sub">the bones and the salt</p>
+
+          <div class="section">
+            <div class="section-label">
+              <span class="label-text">Total Hydration</span>
+              <span class="label-value" id="totalHydVal">70%</span>
+            </div>
+            <input type="range" id="totalHyd" min="55" max="85" value="70" step="1" />
+            <div class="range-bounds"><span>55%</span><span>85%</span></div>
+          </div>
+
+          <div class="section">
+            <div class="section-label">
+              <span class="label-text">Salt</span>
+              <span class="label-value" id="saltVal">2.8%</span>
+            </div>
+            <input type="range" id="salt" min="0" max="4" value="2.8" step="0.1" />
+            <div class="range-bounds"><span>0%</span><span>4%</span></div>
+          </div>
+
+          <div class="section">
+            <div class="section-label">
+              <span class="label-text">Olive Oil</span>
+              <span class="label-value" id="oilVal">0%</span>
+            </div>
+            <input type="range" id="oil" min="0" max="6" value="0" step="0.1" />
+            <div class="range-bounds"><span>0%</span><span>6%</span></div>
+          </div>
+
+          <div class="section">
+            <div class="section-label">
+              <span class="label-text">Malt</span>
+              <span class="label-value" id="maltVal">0%</span>
+            </div>
+            <input type="range" id="malt" min="0" max="2" value="0" step="0.05" />
+            <div class="range-bounds"><span>0%</span><span>2%</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============ RECIPE OUTPUT ============ -->
+      <div class="recipe">
+        <span class="ornament tl"></span>
+        <span class="ornament tr"></span>
+        <span class="ornament bl"></span>
+        <span class="ornament br"></span>
+
+        <div class="recipe-header">
+          <div class="recipe-eyebrow">La Ricetta</div>
+          <div class="recipe-title">Your Recipe</div>
+          <div class="recipe-meta" id="recipeMeta">4 balls × 260 g · total 1040 g</div>
+        </div>
+
+        <div class="ingredient-group">
+          <div class="group-title">Biga (preferment)</div>
+          <div id="bigaList"></div>
+        </div>
+
+        <div class="biga-results">
+          <div class="biga-results-title">Biga Results</div>
+          <div id="bigaResultsContent"></div>
+        </div>
+
+        <div class="ingredient-group">
+          <div class="group-title">Final Mix</div>
+          <div id="finalList"></div>
+        </div>
+
+        <div class="timeline">
+          <div class="timeline-title">⌁ The Timeline ⌁</div>
+          <div id="schedule"></div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      Mix with reverence · proof with patience · bake with fire
+    </footer>
+  </div>
+
+  <script src="biga.js"></script>
+</body>
+</html>

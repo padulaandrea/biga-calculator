@@ -1,0 +1,546 @@
+(() => {
+  const $ = id => document.getElementById(id);
+
+  const inputs = {
+    balls:      $('balls'),
+    ballWeight: $('ballWeight'),
+    startTime:  $('startTime'),
+    bigaHyd:    $('bigaHyd'),
+    temp:       $('temp'),
+    useRT:      $('useRT'),
+    rtTemp:     $('rtTemp'),
+    rtHours:    $('rtHours'),
+    usePro:     $('usePro'),
+    flourTemp:  $('flourTemp'),
+    waterTemp:  $('waterTemp'),
+    bigaPct:    $('bigaPct'),
+    totalHyd:   $('totalHyd'),
+    salt:       $('salt'),
+    oil:        $('oil'),
+    malt:       $('malt'),
+  };
+
+  const out = {
+    bigaHydVal:         $('bigaHydVal'),
+    tempVal:            $('tempVal'),
+    rtTempVal:          $('rtTempVal'),
+    rtHoursVal:         $('rtHoursVal'),
+    flourTempVal:       $('flourTempVal'),
+    waterTempVal:       $('waterTempVal'),
+    bigaPctVal:         $('bigaPctVal'),
+    totalHydVal:        $('totalHydVal'),
+    saltVal:            $('saltVal'),
+    oilVal:             $('oilVal'),
+    maltVal:            $('maltVal'),
+    recipeMeta:         $('recipeMeta'),
+    bigaList:           $('bigaList'),
+    finalList:          $('finalList'),
+    schedule:           $('schedule'),
+    bigaResultsContent: $('bigaResultsContent'),
+    bigaPreviewContent: $('bigaPreviewContent'),
+    rtControls:         $('rtControls'),
+    useRTRow:           $('useRTRow'),
+    proControls:        $('proControls'),
+    useProRow:          $('useProRow'),
+    proReadout:         $('proReadout'),
+    tempHint:           $('tempHint'),
+  };
+
+  // ---- Init datetime to "now" rounded to next quarter hour ----
+  function nowForInput() {
+    const d = new Date();
+    d.setSeconds(0, 0);
+    const m = d.getMinutes();
+    d.setMinutes(m + ((15 - (m % 15)) % 15));
+    const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  }
+  inputs.startTime.value = nowForInput();
+
+  // ---- Helpers ----
+  const fmt = (n, dp = 0) => {
+    if (n < 1 && dp === 0) return n.toFixed(2);
+    return n.toFixed(dp);
+  };
+
+  const row = (name, sub, amount, accent = false, isSub = false) => `
+    <div class="ing-row${isSub ? ' ing-sub' : ''}">
+      <div class="ing-name">${name}${sub ? `<small>${sub}</small>` : ''}</div>
+      <div class="ing-amount">${accent ? `<em>${amount}</em>` : amount}</div>
+    </div>`;
+
+  const resultRow = (label, sub, value, isTotal = false) => `
+    <div class="biga-results-row${isTotal ? ' is-total' : ''}">
+      <span class="br-label">${label}${sub ? `<small>${sub}</small>` : ''}</span>
+      <span class="br-value">${value}</span>
+    </div>`;
+
+  function fmtClock(d) {
+    return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit', hour12: true });
+  }
+  function fmtDay(d) {
+    return d.toLocaleDateString([], { weekday: 'short', month: 'numeric', day: 'numeric' });
+  }
+  function addMinutes(d, m) { return new Date(d.getTime() + m * 60 * 1000); }
+  function addHours(d, h)   { return new Date(d.getTime() + h * 3600 * 1000); }
+
+  // ---- Biga fermentation model ----
+  // Calibrated for STANDARD biga (1% fresh yeast / 0.33% dry) against multiple
+  // self-consistent anchors at 50-60% hydration:
+  //   50% · 12°C → 23h   50% · 18°C → 16h   50% · 26°C → 11h
+  //   60% · 12°C → 21h
+  // Hydration coefficient 0.01 (≈ 9% time change per +10% hydration — modest,
+  // matching real-world biga behavior). Earlier versions overstated hydration
+  // because they anchored to Giorilli's "fast fridge presets" (16h/24h at 4°C)
+  // which use boosted yeast and aren't a typical biga.
+  // Split Q10: cold side (≤18°C) ≈ 1.85, warm side (>18°C) ≈ 1.6.
+  function bigaHours(tempC, hydrationPct) {
+    if (tempC <= 0) tempC = 0.5;
+    const q10 = tempC <= 18 ? 1.85 : 1.6;
+    const tempFactor = Math.pow(q10, (18 - tempC) / 10);
+    const hydrationFactor = Math.exp((50 - hydrationPct) * 0.01);
+    return 16 * tempFactor * hydrationFactor;
+  }
+
+  // ---- Pro mode: estimate biga starting temp from water + flour temps ----
+  // Empirical approximation: biga starts at avg(water, flour) + 1°C friction.
+  // Giorilli's formula (water = 55 - flour - target) is what gives biga_start ≈ target.
+  function bigaStartTemp(waterTempC, flourTempC) {
+    return (waterTempC + flourTempC) / 2 + 1;
+  }
+
+  // ---- Compute hours for one phase, with biga temperature equilibration ----
+  // Newton's law of cooling: biga cools/warms toward restTempC with time constant
+  // τ ≈ 6h (calibrated for typical home biga, 1-3kg in a covered container in
+  // a fridge or fermabiga). Slower than open-air cooling because of the cover
+  // and the dough's own thermal mass. Fermentation progress accumulates at the
+  // rate corresponding to the biga's current temperature; we integrate until
+  // progress = 1 (biga ready). Correctly handles small AND large temp deltas.
+  function phaseHours(restTempC, hydrationPct, bigaStartC) {
+    if (bigaStartC == null || Math.abs(bigaStartC - restTempC) < 1.5) {
+      return bigaHours(restTempC, hydrationPct);
+    }
+    const tau = 6;        // hours · dough thermal time constant
+    const dt  = 0.1;      // 6-minute integration step
+    let progress = 0;
+    let temp = bigaStartC;
+    let t = 0;
+    while (progress < 1 && t < 200) {
+      const rate = 1 / bigaHours(temp, hydrationPct);
+      progress += rate * dt;
+      temp += (restTempC - temp) * (dt / tau);
+      t += dt;
+    }
+    return t;
+  }
+
+  // ---- Hybrid schedule (RT kickstart + cold rest) ----
+  // Numerically simulates biga temperature throughout BOTH phases. Phase 1: biga
+  // warms/cools toward rtTempC. Phase 2: biga continues from wherever it ended,
+  // cooling toward mainTempC — fermentation runs at the current temp throughout.
+  // This properly captures the productive cooling tail when biga goes warm → fridge.
+  function computeSchedule(startTime, hydPct, useHybrid, rtTempC, rtHours, mainTempC, bigaStartC) {
+    if (!useHybrid) {
+      const hours = phaseHours(mainTempC, hydPct, bigaStartC);
+      return {
+        hybrid: false,
+        mainTempC,
+        totalHours: hours,
+        readyTime: addHours(startTime, hours),
+      };
+    }
+
+    const tau = 6;        // dough thermal time constant (h)
+    const dt  = 0.1;      // integration step (6 min)
+    let progress = 0;
+    let temp = (bigaStartC == null) ? rtTempC : bigaStartC;
+    let t = 0;
+
+    // Phase 1: room temperature kickstart
+    while (t < rtHours && progress < 1 && t < 200) {
+      const rate = 1 / bigaHours(temp, hydPct);
+      progress += rate * dt;
+      temp += (rtTempC - temp) * (dt / tau);
+      t += dt;
+    }
+
+    if (progress >= 1) {
+      // Biga finished during RT phase — no cold phase needed
+      return {
+        hybrid: true,
+        rtTempC, rtHours: t,
+        coldTempC: mainTempC, coldHours: 0,
+        totalHours: t,
+        moveToColdTime: addHours(startTime, t),
+        readyTime: addHours(startTime, t),
+        overflow: true,
+      };
+    }
+
+    // Phase 2: cold storage — biga continues cooling from wherever phase 1 left it
+    const rtEnd = t;
+    while (progress < 1 && t < 200) {
+      const rate = 1 / bigaHours(temp, hydPct);
+      progress += rate * dt;
+      temp += (mainTempC - temp) * (dt / tau);
+      t += dt;
+    }
+
+    return {
+      hybrid: true,
+      rtTempC, rtHours,
+      coldTempC: mainTempC, coldHours: t - rtEnd,
+      totalHours: t,
+      moveToColdTime: addHours(startTime, rtHours),
+      readyTime: addHours(startTime, t),
+      overflow: false,
+    };
+  }
+
+  // ---- Live label updates ----
+  function updateLabels() {
+    out.bigaHydVal.textContent   = `${inputs.bigaHyd.value}%`;
+    out.tempVal.textContent      = `${inputs.temp.value}°C`;
+    out.rtTempVal.textContent    = `${inputs.rtTemp.value}°C`;
+    out.rtHoursVal.textContent   = `${parseFloat(inputs.rtHours.value).toFixed(1)} h`;
+    out.flourTempVal.textContent = `${inputs.flourTemp.value}°C`;
+    out.waterTempVal.textContent = `${inputs.waterTemp.value}°C`;
+    out.bigaPctVal.textContent   = `${inputs.bigaPct.value}%`;
+    out.totalHydVal.textContent  = `${inputs.totalHyd.value}%`;
+    out.saltVal.textContent      = `${parseFloat(inputs.salt.value).toFixed(1)}%`;
+    out.oilVal.textContent       = `${parseFloat(inputs.oil.value).toFixed(1)}%`;
+    out.maltVal.textContent      = `${parseFloat(inputs.malt.value).toFixed(2)}%`;
+  }
+
+  // ---- Visibility ----
+  function syncRTVisibility() {
+    const on = inputs.useRT.checked;
+    out.rtControls.classList.toggle('visible', on);
+    out.useRTRow.classList.toggle('is-on', on);
+  }
+  function syncProVisibility() {
+    const on = inputs.usePro.checked;
+    out.proControls.classList.toggle('visible', on);
+    out.useProRow.classList.toggle('is-on', on);
+  }
+
+  // ---- Temperature hint under Rest Temp (non-Pro only) ----
+  // Assumes normal room-temperature flour (~20°C) and computes the water temp
+  // that lands biga at the first-phase target (rest temp, or RT phase if
+  // hybrid is on). Hidden when Pro mode is on (Pro mode shows fuller info).
+  function updateTempHint() {
+    if (inputs.usePro.checked) {
+      out.tempHint.style.display = 'none';
+      return;
+    }
+    out.tempHint.style.display = '';
+
+    const useRT = inputs.useRT.checked;
+    const target = useRT
+      ? parseFloat(inputs.rtTemp.value)
+      : parseFloat(inputs.temp.value);
+    const phaseLabel = useRT ? `kickstart phase (${target}°C)` : `${target}°C rest`;
+    const flourAssume = 20;
+    const recommendedWater = 2 * target - flourAssume - 2;
+
+    let hint;
+    if (recommendedWater >= 0 && recommendedWater <= 40) {
+      hint = `<span class="label">Tip</span> To land biga at the ${phaseLabel} with normal room-temp flour (~${flourAssume}°C), use water at <span class="value">~${recommendedWater}°C</span>.`;
+    } else if (recommendedWater < 0) {
+      const chilledTemp = Math.max(0, target - 1);
+      hint = `<span class="label">Tip</span> For the ${phaseLabel}, chill <strong>both</strong> flour and water to ≈ <span class="value">${chilledTemp}°C</span> — water alone can't take biga that cold from room-temp flour.`;
+    } else {
+      const warmedTemp = Math.min(35, target - 3);
+      hint = `<span class="label">Tip</span> For the ${phaseLabel}, warm flour and water to ≈ <span class="value">${warmedTemp}°C</span> each.`;
+    }
+    hint += ` <span class="muted">Enable Pro mode to fine-tune.</span>`;
+    out.tempHint.innerHTML = hint;
+  }
+
+  // ---- Build the biga results HTML (used by both preview + recipe card) ----
+  function buildResultsHTML(s) {
+    const dayClock = d => `<span class="muted">${fmtDay(d)}</span> <span class="strong">${fmtClock(d)}</span>`;
+    if (!s.hybrid) {
+      return [
+        resultRow('Biga rest time', null, `<span class="strong">${Math.round(s.totalHours)} hours</span>`),
+        resultRow('Biga ready',     null, dayClock(s.readyTime)),
+      ].join('');
+    }
+    return [
+      resultRow('Room temp phase', `at ${s.rtTempC}°C`,   `<span class="strong">${s.rtHours.toFixed(1)} h</span>`),
+      resultRow('Cold phase',      `at ${s.coldTempC}°C`, `<span class="strong">${s.coldHours.toFixed(1)} h</span>`),
+      resultRow('Total rest time', null, `<span class="strong">${s.totalHours.toFixed(1)} hours</span>`, true),
+      resultRow('Biga ready',      null, dayClock(s.readyTime)),
+    ].join('');
+  }
+
+  // ---- Pro mode readout ----
+  function updateProReadout(targetTempC, bigaStartC, hydPct) {
+    const flourT = parseFloat(inputs.flourTemp.value);
+    const waterT = parseFloat(inputs.waterTemp.value);
+    const deltaStart = bigaStartC - targetTempC;
+    const absDelta = Math.abs(deltaStart);
+
+    // Concrete time impact: how much the warm/cold start shifts ready time vs.
+    // a biga that starts already at the target temperature.
+    const timeWithStart = phaseHours(targetTempC, hydPct, bigaStartC);
+    const timeAtTarget  = bigaHours(targetTempC, hydPct);
+    const timeDelta     = timeWithStart - timeAtTarget;   // − = faster · + = slower
+
+    // ---- Recommendation: what water temp would land biga exactly at target ----
+    // From bigaStartTemp = (water + flour)/2 + 1 = target  →  water = 2*target − flour − 2
+    const recommended    = 2 * targetTempC - flourT - 2;
+    const recAchievable  = (recommended >= 0 && recommended <= 40);
+
+    let recBlock;
+    if (recAchievable) {
+      const deltaWater = waterT - recommended;
+      let recNote;
+      if (Math.abs(deltaWater) < 1.5) {
+        recNote = `<span class="note">✓ matches recommended water</span>`;
+      } else if (deltaWater < 0) {
+        recNote = `<span class="note">${Math.abs(deltaWater).toFixed(0)}°C colder than recommended</span>`;
+      } else {
+        recNote = `<span class="note">${deltaWater.toFixed(0)}°C warmer than recommended</span>`;
+      }
+
+      let giorilliNote = '';
+      if (targetTempC >= 14 && targetTempC <= 22) {
+        const giorilli = 55 - flourT - targetTempC;
+        giorilliNote = `<br><span class="note">(Giorilli's classical "55 − flour − target" → ${giorilli}°C; an approximation calibrated for ~19°C biga)</span>`;
+      }
+
+      recBlock = `
+        <div>
+          <span class="label">To land biga at target ${targetTempC}°C</span>
+          Water = 2 × ${targetTempC}°C − ${flourT}°C flour − 2°C friction →
+          <span class="value">${recommended}°C water</span>
+          <br>${recNote}${giorilliNote}
+        </div>`;
+    } else if (recommended < 0) {
+      // Cold target with warm flour: can't hit target with water alone — but
+      // that's optional, not a failure. The biga simply starts warm and cools.
+      const idealIng = Math.max(0, targetTempC - 1);
+      recBlock = `
+        <div>
+          <span class="label">Optional: chill the flour to land biga at target</span>
+          With ${flourT}°C flour, no water temp can land the biga at exactly
+          ${targetTempC}°C. <strong>You don't have to</strong> — the biga will
+          simply start warm and cool down in storage. The time impact is shown
+          below. If you do want a clean start at target, chill both flour and
+          water to ≈ <span class="value">${idealIng}°C</span>.
+        </div>`;
+    } else {
+      // Warm target needing very hot water — same framing
+      const idealIng = Math.min(35, targetTempC - 1);
+      recBlock = `
+        <div>
+          <span class="label">Optional: warm the flour to land biga at target</span>
+          With ${flourT}°C flour, water would need to be ${recommended}°C — hot
+          enough to harm yeast. The biga will simply start cool and warm up in
+          storage; time impact below. To start exactly at target, warm both
+          ingredients to ≈ <span class="value">${idealIng}°C</span>.
+        </div>`;
+    }
+
+    // ---- Biga start: severity label + actual time impact from the model ----
+    const dir = deltaStart > 0 ? 'above' : 'below';
+    let severityLabel, impactText;
+
+    if (absDelta < 1.5) {
+      severityLabel = '✓ at target';
+      impactText = 'ferment runs on schedule';
+    } else {
+      if (absDelta < 5)        severityLabel = `${absDelta.toFixed(1)}°C ${dir} target`;
+      else if (absDelta < 10)  severityLabel = `${absDelta.toFixed(1)}°C ${dir} target — notable`;
+      else if (absDelta < 15)  severityLabel = `${absDelta.toFixed(1)}°C ${dir} target ⚠`;
+      else                     severityLabel = `${absDelta.toFixed(1)}°C ${dir} target ⚠ unusual`;
+
+      const transition = deltaStart > 0 ? 'cool toward' : 'warm toward';
+      if (Math.abs(timeDelta) < 0.3) {
+        impactText = `biga will ${transition} target — minimal time impact`;
+      } else if (timeDelta < 0) {
+        impactText = `biga will ${transition} target — ready about <strong>${Math.abs(timeDelta).toFixed(1)} h faster</strong> than a steady-state ferment at ${targetTempC}°C (warmer phase speeds early fermentation)`;
+      } else {
+        impactText = `biga will ${transition} target — ready about <strong>${timeDelta.toFixed(1)} h slower</strong> than a steady-state ferment at ${targetTempC}°C (cold phase delays early fermentation)`;
+      }
+      // Over-fermentation caution for very warm starts heading to cold
+      if (deltaStart > 12 && targetTempC < 14) {
+        impactText += `<br><span class="note">⚠ Long warm phase before reaching cold storage — watch for over-fermentation; chilling the flour gives a cleaner result.</span>`;
+      }
+    }
+
+    out.proReadout.innerHTML = recBlock + `
+      <div>
+        <span class="label">Your biga starts at</span>
+        <span class="value">${bigaStartC.toFixed(1)}°C</span>
+        <br><span class="note">${severityLabel} — ${impactText}</span>
+      </div>`;
+  }
+
+  // ---- Main calc ----
+  function calc() {
+    updateLabels();
+    syncRTVisibility();
+    syncProVisibility();
+    updateTempHint();
+
+    const N        = Math.max(1, parseInt(inputs.balls.value) || 1);
+    const W        = Math.max(50, parseFloat(inputs.ballWeight.value) || 260);
+    const bigaHyd  = parseFloat(inputs.bigaHyd.value)  / 100;
+    const tempC    = parseFloat(inputs.temp.value);
+    const bigaPct  = parseFloat(inputs.bigaPct.value)  / 100;
+    const totalHyd = parseFloat(inputs.totalHyd.value) / 100;
+    const saltPct  = parseFloat(inputs.salt.value)     / 100;
+    const oilPct   = parseFloat(inputs.oil.value)      / 100;
+    const maltPct  = parseFloat(inputs.malt.value)     / 100;
+
+    const totalDough = N * W;
+
+    // baker's percentages
+    const flour      = totalDough / (1 + totalHyd + saltPct + oilPct + maltPct);
+    const totalWater = flour * totalHyd;
+    const salt       = flour * saltPct;
+    const oil        = flour * oilPct;
+    const malt       = flour * maltPct;
+
+    const bigaFlour      = flour * bigaPct;
+    const bigaWater      = bigaFlour * bigaHyd;
+    const FRESH_YEAST_PCT = 1.0;
+    const bigaYeast      = bigaFlour * FRESH_YEAST_PCT / 100;
+
+    const finalFlour = flour - bigaFlour;
+    const finalWater = totalWater - bigaWater;
+
+    // ---- Ingredient temperatures & biga start temp ----
+    // These drive both the recipe card display and the schedule calculation,
+    // so they must stay in sync. bigaStartC is always derived — never null —
+    // to keep non-Pro and Pro rest-time estimates consistent for the same values.
+    const flourAssume = 20; // assumed room-temp flour when Pro mode is off
+    const targetTempC = inputs.useRT.checked
+      ? parseFloat(inputs.rtTemp.value)
+      : tempC;
+
+    let flourTempForCalc, waterTempForCalc, bigaStartC;
+    let flourNote, waterNote;
+
+    if (inputs.usePro.checked) {
+      flourTempForCalc = parseFloat(inputs.flourTemp.value);
+      waterTempForCalc = parseFloat(inputs.waterTemp.value);
+      flourNote = `"00" or strong bread flour · at ${flourTempForCalc}°C`;
+      waterNote = `${(bigaHyd*100).toFixed(0)}% hydration · at ${waterTempForCalc}°C`;
+      bigaStartC = bigaStartTemp(waterTempForCalc, flourTempForCalc);
+      updateProReadout(targetTempC, bigaStartC, parseFloat(inputs.bigaHyd.value));
+    } else {
+      // When RT kickstart is on, flour sits at room temperature (which the user
+      // has set via the RT slider); otherwise assume standard ~20°C room temp.
+      flourTempForCalc = inputs.useRT.checked
+        ? parseFloat(inputs.rtTemp.value)
+        : flourAssume;
+      // Water temp to land biga at targetTempC:
+      //   bigaStart = (water + flour) / 2 + 1 = target  →  water = 2×target − flour − 2
+      // Clamped at 0°C (ice water) — the physical lower limit.
+      waterTempForCalc = Math.max(0, Math.round(2 * targetTempC - flourTempForCalc - 2));
+      flourNote = `"00" or strong bread flour · ~${flourTempForCalc}°C`;
+      waterNote = `${(bigaHyd*100).toFixed(0)}% hydration · ~${waterTempForCalc}°C`;
+      bigaStartC = bigaStartTemp(waterTempForCalc, flourTempForCalc);
+    }
+
+    // ---- Meta ----
+    out.recipeMeta.textContent = `${N} ${N === 1 ? 'ball' : 'balls'} × ${W} g · total ${Math.round(totalDough)} g`;
+
+    out.bigaList.innerHTML =
+      row('Flour',       flourNote, `${fmt(bigaFlour)} g`, true) +
+      row('Water',       waterNote, `${fmt(bigaWater)} g`, true) +
+      row('Fresh yeast', `or ${fmt(bigaYeast/3, 2)} g dry · 1% of biga flour`, `${fmt(bigaYeast, 2)} g`);
+
+    // ---- Biga schedule ----
+    const startTime = inputs.startTime.value ? new Date(inputs.startTime.value) : new Date();
+    const schedule = computeSchedule(
+      startTime,
+      parseFloat(inputs.bigaHyd.value),
+      inputs.useRT.checked,
+      parseFloat(inputs.rtTemp.value),
+      parseFloat(inputs.rtHours.value),
+      tempC,
+      bigaStartC
+    );
+
+    // ---- Render biga results (both blocks) ----
+    const resultsHTML = buildResultsHTML(schedule);
+    out.bigaResultsContent.innerHTML = resultsHTML;
+    out.bigaPreviewContent.innerHTML = resultsHTML;
+
+    // ---- Final mix ----
+    let finalRows =
+      row('Biga (all of it)', '', `${fmt(bigaFlour + bigaWater + bigaYeast)} g`) +
+      row('Flour',             'remaining', `${fmt(finalFlour)} g`, true) +
+      row('Water (total)',     `to reach ${(totalHyd*100).toFixed(0)}% total hydration`, `${fmt(finalWater)} g`, true) +
+      row('add immediately',   `55–60% of total · pour over the biga`, `${fmt(finalWater * 0.55)}–${fmt(finalWater * 0.60)} g`, true, true) +
+      row('add gradually',     `40–45% of total · stream in while kneading`, `${fmt(finalWater * 0.40)}–${fmt(finalWater * 0.45)} g`, true, true) +
+      row('Salt',              `${(saltPct*100).toFixed(1)}%`, `${fmt(salt, 1)} g`);
+    if (oil  > 0.05) finalRows += row('Olive oil', `${(oilPct*100).toFixed(1)}%`,  `${fmt(oil, 1)} g`);
+    if (malt > 0.05) finalRows += row('Malt',      `${(maltPct*100).toFixed(2)}%`, `${fmt(malt, 2)} g`);
+    out.finalList.innerHTML = finalRows;
+
+    // ---- Timeline ----
+    const oilStr  = oilPct  > 0.005 ? 'olive oil, ' : '';
+    const maltStr = maltPct > 0.005 ? 'malt, '      : '';
+
+    const tKnead   = startTime;
+    const tReady   = schedule.readyTime;
+    const tMixDone = addMinutes(tReady, 15);
+    const tBulkEnd = addMinutes(tMixDone, 30);
+    const tShaped  = addMinutes(tBulkEnd, 15);
+    const tBake    = addMinutes(tShaped, 4 * 60 + 30);
+
+    // Pro-mode water guidance for the knead step
+    const kneadDetail = inputs.usePro.checked
+      ? ` Use water at <strong>${inputs.waterTemp.value}°C</strong>.`
+      : '';
+
+    let steps;
+    if (!schedule.hybrid) {
+      steps = [
+        { t: tKnead,   text: `<strong>Knead the biga.</strong>${kneadDetail} Crumble yeast into the water, then combine with flour. Mix to rough lumps — do NOT develop gluten.` },
+        { t: tKnead,   text: `<strong>Cover and wait.</strong> Rest the biga at <strong>${schedule.mainTempC}°C</strong> for <strong>${Math.round(schedule.totalHours)} hours</strong>.` },
+        { t: tReady,   text: `<strong>Biga ready — start the bulk.</strong> Break the biga into the <strong>first 55–60% of the water</strong>. Add flour, ${oilStr}${maltStr}then salt. Knead 8–12 min, streaming in the reserved water gradually until fully absorbed.` },
+        { t: tMixDone, text: `<strong>Bulk rest.</strong> Cover and rest at room temperature for ~30 minutes.` },
+        { t: tBulkEnd, text: `<strong>Divide & shape.</strong> Form <strong>${N} × ${W} g</strong> balls and round them tightly.` },
+        { t: tShaped,  text: `<strong>Final proof.</strong> Cover and proof at 22–24°C until visibly puffy and jiggly (~4–5 h).` },
+        { t: tBake,    text: `<strong>Bake!</strong> Stretch by hand and bake on a hot stone, steel, or wood-fired oven at the highest heat you can manage.` },
+      ];
+    } else {
+      const moveT = schedule.moveToColdTime;
+      const overflowStr = schedule.overflow
+        ? `Watch closely — the biga may be ready at room temp before reaching the fridge.`
+        : `Then move it to <strong>${schedule.coldTempC}°C</strong> for <strong>${schedule.coldHours.toFixed(1)} more hours</strong>.`;
+      steps = [
+        { t: tKnead,   text: `<strong>Knead the biga.</strong>${kneadDetail} Crumble yeast into the water, then combine with flour. Mix to rough lumps — do NOT develop gluten.` },
+        { t: tKnead,   text: `<strong>Rest at room temperature.</strong> Cover and let the biga sit at <strong>${schedule.rtTempC}°C</strong> for <strong>${schedule.rtHours.toFixed(1)} hours</strong> to kickstart fermentation.` },
+        { t: moveT,    text: `<strong>Move to cold storage.</strong> Transfer the biga to <strong>${schedule.coldTempC}°C</strong>. ${overflowStr}` },
+        { t: tReady,   text: `<strong>Biga ready — start the bulk.</strong> Break the biga into the <strong>first 55–60% of the water</strong>. Add flour, ${oilStr}${maltStr}then salt. Knead 8–12 min, streaming in the reserved water gradually until fully absorbed.` },
+        { t: tMixDone, text: `<strong>Bulk rest.</strong> Cover and rest at room temperature for ~30 minutes.` },
+        { t: tBulkEnd, text: `<strong>Divide & shape.</strong> Form <strong>${N} × ${W} g</strong> balls and round them tightly.` },
+        { t: tShaped,  text: `<strong>Final proof.</strong> Cover and proof at 22–24°C until visibly puffy and jiggly (~4–5 h).` },
+        { t: tBake,    text: `<strong>Bake!</strong> Stretch by hand and bake on a hot stone, steel, or wood-fired oven at the highest heat you can manage.` },
+      ];
+    }
+
+    out.schedule.innerHTML = steps.map((s, i) => `
+      <div class="step">
+        <div class="step-num">${i + 1}</div>
+        <div class="step-text">${s.text}</div>
+        <div class="step-time">
+          <span class="day">${fmtDay(s.t)}</span>
+          <span class="clock">${fmtClock(s.t)}</span>
+        </div>
+      </div>`).join('');
+  }
+
+  Object.values(inputs).forEach(el => {
+    el.addEventListener('input', calc);
+    el.addEventListener('change', calc);
+  });
+  calc();
+})();
