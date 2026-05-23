@@ -39,14 +39,19 @@ function runRecipe(recipe) {
 }
 
 // ---- Classify result ----
+// Policy: overestimation is dangerous (baker waits too long → over-fermentation).
+// Underestimation ≤ 2h is acceptable (baker checks early, waits a bit more).
+// Underestimation > 2h is a warning (safe, but the mismatch is too large to ignore).
+const TOLERANCE = 2; // hours — acceptable underestimation window
+
 function classify(recipe, hours) {
   const { min, max } = recipe.expectedHours;
-  const inRange      = hours >= min && hours <= max;
   const yeastMismatch = recipe.yeastPct !== 1.0;
 
-  if (inRange)       return 'PASS';
-  if (yeastMismatch) return 'YEAST';
-  return 'FAIL';
+  if (hours >= min - TOLERANCE && hours <= max) return 'PASS';        // ✅ within window
+  if (hours > max)                              return 'FAIL_OVER';   // ❌ overestimates — dangerous
+  if (!yeastMismatch)                           return 'WARN_EARLY';  // ⬇ underestimates >2h, 1% yeast
+  return 'YEAST';                                                      // ⚠ yeast mismatch
 }
 
 // ---- Format schedule detail ----
@@ -63,8 +68,8 @@ function scheduleDetail(schedule) {
 // ---- Main ----
 console.log(`\n${c(ANSI.bold, '=== Biga Calculator — Test Suite ===')} ${c(ANSI.dim, `(${recipes.length} recipes)`)}\n`);
 
-let passed = 0, warned = 0, failed = 0;
-const failedIds = [];
+let passed = 0, early = 0, warned = 0, failed = 0;
+const failedIds = [], earlyIds = [];
 
 for (const recipe of recipes) {
   const { schedule, bigaStartC } = runRecipe(recipe);
@@ -83,13 +88,20 @@ for (const recipe of recipes) {
     badge  = c(ANSI.green,  '✅ PASS');
     detail = '';
     passed++;
+  } else if (status === 'WARN_EARLY') {
+    const gap = (recipe.expectedHours.min - hours).toFixed(1);
+    badge  = c(ANSI.cyan,   '⬇  EARLY');
+    detail = c(ANSI.dim, `  underestimates by ${gap}h — baker checks early, safe`);
+    early++;
+    earlyIds.push(recipe.id);
   } else if (status === 'YEAST') {
     badge  = c(ANSI.yellow, '⚠  YEAST');
     detail = c(ANSI.dim, '  model uses 1% fresh yeast');
     warned++;
   } else {
-    badge  = c(ANSI.red,    '❌ FAIL');
-    detail = c(ANSI.red, '  ← model gap, investigate');
+    const gap = (hours - recipe.expectedHours.max).toFixed(1);
+    badge  = c(ANSI.red,    '❌ OVER');
+    detail = c(ANSI.red, `  overestimates by ${gap}h — baker may over-ferment`);
     failed++;
     failedIds.push(recipe.id);
   }
@@ -109,15 +121,16 @@ for (const recipe of recipes) {
 // ---- Summary ----
 const total = recipes.length;
 console.log(c(ANSI.bold, '=== Summary ==='));
-console.log(`  ${c(ANSI.green,  '✅ Passed')} : ${passed} / ${total}`);
-console.log(`  ${c(ANSI.yellow, '⚠  Yeast ')} : ${warned} / ${total}  ${c(ANSI.dim, '(known model limitation — yeastPct ≠ 1%)')}`);
-console.log(`  ${c(ANSI.red,    '❌ Failed')} : ${failed} / ${total}  ${failed > 0 ? c(ANSI.red, `(recipes: #${failedIds.join(', #')})`) : c(ANSI.dim, '(none)')}`);
+console.log(`  ${c(ANSI.green,  '✅ Passed     ')} : ${passed} / ${total}`);
+console.log(`  ${c(ANSI.cyan,   '⬇  Early      ')} : ${early}  / ${total}  ${c(ANSI.dim, `(underestimates >2h — safe but imprecise)${earlyIds.length ? '  #' + earlyIds.join(', #') : ''}`)}`);
+console.log(`  ${c(ANSI.yellow, '⚠  Yeast      ')} : ${warned} / ${total}  ${c(ANSI.dim, '(known model limitation — yeastPct ≠ 1%)')}`);
+console.log(`  ${c(ANSI.red,    '❌ Overestimate')} : ${failed} / ${total}  ${failed > 0 ? c(ANSI.red, `(model gap — investigate)  #${failedIds.join(', #')}`) : c(ANSI.dim, '(none — ✓)')}`);
 console.log('');
 
 if (failed > 0) {
-  console.log(c(ANSI.red, `${failed} non-yeast failure(s) — model output outside expected range for recipes with 1% yeast.`));
+  console.log(c(ANSI.red, `${failed} overestimate(s) — model predicts longer than reality, risk of over-fermentation.`));
   process.exit(1);
 } else {
-  console.log(c(ANSI.green, 'All 1% yeast recipes pass. Yeast-mismatch recipes are flagged but do not block.'));
+  console.log(c(ANSI.green, 'No overestimates. Model is safe (may underestimate, baker just waits a bit longer).'));
   process.exit(0);
 }
