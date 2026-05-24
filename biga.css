@@ -1,17 +1,17 @@
 :root {
-  --cream:        #F0F2F5;
-  --cream-soft:   #E6E9EF;
+  --cream:        #EEF3FF;
+  --cream-soft:   #E0EAFF;
   --paper:        #FFFFFF;
-  --espresso:     #1A1C20;
-  --espresso-2:   #3A3E48;
-  --terracotta:   #C0132A;
-  --terracotta-d: #96001E;
-  --olive:        #4A6FA5;
-  --olive-d:      #3A5A8A;
-  --tan:          #8A95A8;
-  --tan-light:    #D4D8E0;
-  --rule:         #D4D8E0;
-  --shadow:       0 1px 0 rgba(26, 28, 32, .04), 0 8px 24px -12px rgba(26, 28, 32, .14);
+  --espresso:     #1A2456;
+  --espresso-2:   #2E3E70;
+  --terracotta:   #1B5AC7;
+  --terracotta-d: #1244A0;
+  --olive:        #C48A00;
+  --olive-d:      #8A6400;
+  --tan:          #8AA0D8;
+  --tan-light:    #C8D4F0;
+  --rule:         #C8D4F0;
+  --shadow:       0 1px 0 rgba(26, 36, 86, .05), 0 8px 24px -12px rgba(26, 36, 86, .14);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,8 +24,8 @@ html, body {
   line-height: 1.5;
   min-height: 100vh;
   background-image:
-    radial-gradient(ellipse at top left, rgba(74, 111, 165, .10), transparent 60%),
-    radial-gradient(ellipse at bottom right, rgba(192, 19, 42, .07), transparent 50%);
+    radial-gradient(ellipse at top left, rgba(27, 90, 199, .10), transparent 60%),
+    radial-gradient(ellipse at bottom right, rgba(240, 180, 41, .14), transparent 50%);
 }
 
 body::before {
@@ -34,7 +34,7 @@ body::before {
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.10 0 0 0 0 0.11 0 0 0 0 0.13 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.08 0 0 0 0 0.10 0 0 0 0 0.22 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   opacity: .2;
   mix-blend-mode: multiply;
 }
