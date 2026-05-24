@@ -1,17 +1,17 @@
 :root {
-  --cream:        #F2E8D5;
-  --cream-soft:   #EFE3CC;
-  --paper:        #FAF4E6;
-  --espresso:     #2A1810;
-  --espresso-2:   #4A2C1F;
-  --terracotta:   #B84A2C;
-  --terracotta-d: #8E3520;
-  --olive:        #6B7345;
-  --olive-d:      #4F5530;
-  --tan:          #C8A87C;
-  --tan-light:    #DCC9A4;
-  --rule:         #C8B391;
-  --shadow:       0 1px 0 rgba(42, 24, 16, .04), 0 8px 24px -12px rgba(42, 24, 16, .18);
+  --cream:        #FFF8EE;
+  --cream-soft:   #FFF0D8;
+  --paper:        #FFFCF6;
+  --espresso:     #1A0E08;
+  --espresso-2:   #3D1E10;
+  --terracotta:   #D94F28;
+  --terracotta-d: #B03A18;
+  --olive:        #4E7A35;
+  --olive-d:      #3A5C28;
+  --tan:          #D4A870;
+  --tan-light:    #EDD5A8;
+  --rule:         #E2C498;
+  --shadow:       0 1px 0 rgba(26, 14, 8, .04), 0 8px 24px -12px rgba(26, 14, 8, .16);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,8 +24,8 @@ html, body {
   line-height: 1.5;
   min-height: 100vh;
   background-image:
-    radial-gradient(ellipse at top left, rgba(200, 168, 124, .25), transparent 60%),
-    radial-gradient(ellipse at bottom right, rgba(184, 74, 44, .08), transparent 50%);
+    radial-gradient(ellipse at top left, rgba(212, 168, 112, .22), transparent 60%),
+    radial-gradient(ellipse at bottom right, rgba(217, 79, 40, .10), transparent 50%);
 }
 
 body::before {
@@ -35,7 +35,7 @@ body::before {
   pointer-events: none;
   z-index: 1;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.16 0 0 0 0 0.09 0 0 0 0 0.06 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: .5;
+  opacity: .3;
   mix-blend-mode: multiply;
 }
 
