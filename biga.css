@@ -361,8 +361,15 @@ input[type="range"]::-moz-range-thumb {
   padding: 36px 32px;
   box-shadow: var(--shadow);
   position: sticky; top: 24px;
+  max-height: calc(100vh - 48px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
-@media (max-width: 880px) { .recipe { position: static; } }
+.recipe::-webkit-scrollbar       { width: 4px; }
+.recipe::-webkit-scrollbar-track { background: transparent; }
+.recipe::-webkit-scrollbar-thumb { background: var(--tan-light); border-radius: 2px; }
+.recipe::-webkit-scrollbar-thumb:hover { background: var(--terracotta); }
+@media (max-width: 880px) { .recipe { position: static; max-height: none; overflow-y: visible; } }
 
 .recipe-header {
   text-align: center; padding-bottom: 24px; margin-bottom: 28px;
