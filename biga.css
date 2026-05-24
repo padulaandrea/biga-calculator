@@ -83,6 +83,8 @@ h1 em {
 @media (max-width: 880px) {
   .grid { grid-template-columns: 1fr; gap: 32px; }
   .wrap { padding: 40px 20px 60px; }
+  /* Pull the wrap flush to the top so the sticky tab bar meets the edge */
+  .wrap { padding-top: 0; }
 }
 
 /* ---------- Panels ---------- */
@@ -547,20 +549,24 @@ footer {
 }
 
 @media (max-width: 880px) {
-  /* Shrink the header */
-  header { margin-bottom: 28px; }
+  /* Shrink the header and add top padding (wrap has none, header sits below sticky tab) */
+  header { margin-bottom: 28px; padding-top: 24px; }
   h1 { font-size: clamp(36px, 10vw, 96px); line-height: 1; }
   .eyebrow { margin-bottom: 10px; }
   .tagline { font-size: 15px; margin-top: 10px; }
 
-  /* Tab bar */
+  /* Tab bar — sticky at top on mobile */
   .mobile-tabs {
     display: flex;
+    position: sticky;
+    top: 0;
+    z-index: 100;
     margin-bottom: 24px;
     border: 1px solid var(--rule);
-    border-radius: 6px;
+    border-radius: 0 0 6px 6px;   /* flat top when stuck to edge */
+    border-top: none;
     overflow: hidden;
-    box-shadow: var(--shadow);
+    box-shadow: 0 2px 8px rgba(26, 14, 8, .12);
   }
   .tab-btn {
     flex: 1;
