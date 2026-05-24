@@ -228,25 +228,25 @@
     if (recommended < 0) {
       const idealT = Math.max(0, targetTempC - 1);
       waterBlock = `
-        <span class="label">Ideal water</span>
+        <span class="label">Water to start biga at ${targetTempC}°C</span>
         can't reach ${targetTempC}°C with water alone at ${flourT}°C flour —
         chill both ingredients to ~<span class="value">${idealT}°C</span> for a clean start`;
     } else if (recommended > 40) {
       const idealT = Math.min(35, targetTempC - 1);
       waterBlock = `
-        <span class="label">Ideal water</span>
+        <span class="label">Water to start biga at ${targetTempC}°C</span>
         would need ${recommended}°C — too hot for yeast.
         Warm both flour and water to ~<span class="value">${idealT}°C</span> instead`;
     } else {
       const diff = waterT - recommended;
       let matchNote;
       if (Math.abs(diff) < 1.5) {
-        matchNote = `<span class="note">✓ your ${waterT}°C is spot on</span>`;
+        matchNote = `<span class="note">✓ biga will start right at ${targetTempC}°C</span>`;
       } else {
-        matchNote = `<span class="note">you set ${waterT}°C — ${Math.abs(diff).toFixed(0)}°C ${diff > 0 ? 'warmer' : 'colder'} than ideal</span>`;
+        matchNote = `<span class="note">you set ${waterT}°C — biga will start at ${bigaStartC.toFixed(1)}°C</span>`;
       }
       waterBlock = `
-        <span class="label">Ideal water</span>
+        <span class="label">Water to start biga at ${targetTempC}°C</span>
         <span class="value">${recommended}°C</span> &ensp;${matchNote}`;
     }
 
