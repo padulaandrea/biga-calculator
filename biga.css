@@ -1,17 +1,17 @@
 :root {
-  --cream:        #EEF3FF;
-  --cream-soft:   #E0EAFF;
-  --paper:        #FFFFFF;
-  --espresso:     #1A2456;
-  --espresso-2:   #2E3E70;
-  --terracotta:   #1B5AC7;
-  --terracotta-d: #1244A0;
-  --olive:        #C48A00;
-  --olive-d:      #8A6400;
-  --tan:          #8AA0D8;
-  --tan-light:    #C8D4F0;
-  --rule:         #C8D4F0;
-  --shadow:       0 1px 0 rgba(26, 36, 86, .05), 0 8px 24px -12px rgba(26, 36, 86, .14);
+  --cream:        #FFF8EE;
+  --cream-soft:   #FFF0D8;
+  --paper:        #FFFCF6;
+  --espresso:     #1A0E08;
+  --espresso-2:   #3D1E10;
+  --terracotta:   #C41530;
+  --terracotta-d: #9C0E22;
+  --olive:        #4E7A35;
+  --olive-d:      #3A5C28;
+  --tan:          #D4A870;
+  --tan-light:    #EDD5A8;
+  --rule:         #E2C498;
+  --shadow:       0 1px 0 rgba(26, 14, 8, .04), 0 8px 24px -12px rgba(26, 14, 8, .16);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -24,8 +24,8 @@ html, body {
   line-height: 1.5;
   min-height: 100vh;
   background-image:
-    radial-gradient(ellipse at top left, rgba(27, 90, 199, .10), transparent 60%),
-    radial-gradient(ellipse at bottom right, rgba(240, 180, 41, .14), transparent 50%);
+    radial-gradient(ellipse at top left, rgba(212, 168, 112, .22), transparent 60%),
+    radial-gradient(ellipse at bottom right, rgba(196, 21, 48, .08), transparent 50%);
 }
 
 body::before {
@@ -34,8 +34,8 @@ body::before {
   inset: 0;
   pointer-events: none;
   z-index: 1;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.08 0 0 0 0 0.10 0 0 0 0 0.22 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-  opacity: .2;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0.16 0 0 0 0 0.09 0 0 0 0 0.06 0 0 0 0 0.08 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  opacity: .3;
   mix-blend-mode: multiply;
 }
 
