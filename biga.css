@@ -391,8 +391,13 @@ input[type="range"]::-moz-range-thumb {
   margin-top: 14px; font-family: 'Fraunces', serif; font-style: italic;
   font-size: 14px; color: var(--espresso-2); opacity: .7;
 }
-.share-btn {
+.recipe-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
   margin-top: 16px;
+}
+.share-btn {
   padding: 8px 20px;
   background: transparent;
   border: 1.5px solid var(--terracotta);
@@ -408,6 +413,14 @@ input[type="range"]::-moz-range-thumb {
 }
 .share-btn:hover {
   background: var(--terracotta);
+  color: var(--paper);
+}
+.print-btn {
+  border-color: var(--olive);
+  color: var(--olive);
+}
+.print-btn:hover {
+  background: var(--olive);
   color: var(--paper);
 }
 
@@ -637,6 +650,77 @@ footer {
 
   /* Smaller value readout inside collapsed sections */
   .controls-collapse .label-value { font-size: 17px; }
+}
+
+/* ---------- Print ---------- */
+@media print {
+  /* ── Reset page chrome ── */
+  html, body {
+    background: white !important;
+    background-image: none !important;
+    color: #1a0e08;
+    font-size: 11pt;
+  }
+  body::before { display: none; }   /* noise texture */
+
+  /* ── Layout: single column, no wrap padding ── */
+  .wrap { padding: 0; max-width: 100%; }
+  .grid { display: block; }
+
+  /* ── Hide everything except the recipe card ── */
+  header              { display: none; }
+  .mobile-tabs        { display: none !important; }
+  .tab-pane[data-pane="configure"] { display: none !important; }
+  .biga-preview       { display: none !important; }
+  footer              { display: none; }
+  .recipe-actions     { display: none; }
+  .ornament           { display: none; }
+
+  /* ── Force recipe pane visible (overrides mobile tab hiding) ── */
+  .tab-pane[data-pane="recipe"] { display: block !important; }
+
+  /* ── Strip card chrome from recipe ── */
+  .recipe {
+    position: static !important;
+    max-height: none !important;
+    overflow-y: visible !important;
+    box-shadow: none !important;
+    border: none !important;
+    padding: 0 !important;
+    background: white !important;
+  }
+
+  /* ── Recipe header ── */
+  .recipe-header {
+    padding-bottom: 14pt;
+    margin-bottom: 18pt;
+  }
+  .recipe-title { font-size: 26pt; }
+  .recipe-meta  { font-size: 10pt; }
+
+  /* ── Ingredient groups: avoid splitting across pages ── */
+  .ingredient-group { page-break-inside: avoid; margin-bottom: 14pt; }
+  .ing-row          { page-break-inside: avoid; }
+
+  /* ── Biga results: keep together ── */
+  .biga-results {
+    page-break-inside: avoid;
+    background: #f7f2ea !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+
+  /* ── Timeline: keep steps together ── */
+  .timeline {
+    background: #f7f2ea !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .step          { page-break-inside: avoid; }
+  .timeline-title { page-break-after: avoid; }
+
+  /* ── Suppress URL decoration on links ── */
+  a[href]::after { content: none !important; }
 }
 
 /* corner ornaments */
