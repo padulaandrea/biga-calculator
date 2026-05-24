@@ -17,9 +17,15 @@
       <p class="tagline">— a slow preferment for Neapolitan-style dough —</p>
     </header>
 
+    <!-- Mobile tab bar (hidden on desktop) -->
+    <div class="mobile-tabs">
+      <button class="tab-btn active" data-target="configure">⚙️ Configure</button>
+      <button class="tab-btn" data-target="recipe">📋 Recipe</button>
+    </div>
+
     <div class="grid">
       <!-- ============ INPUTS ============ -->
-      <div>
+      <div class="tab-pane active" data-pane="configure">
         <!-- Panel 1 -->
         <div class="panel" style="margin-bottom: 32px;">
           <span class="panel-number">i.</span>
@@ -203,7 +209,7 @@
       </div>
 
       <!-- ============ RECIPE OUTPUT ============ -->
-      <div class="recipe">
+      <div class="recipe tab-pane" data-pane="recipe">
         <span class="ornament tl"></span>
         <span class="ornament tr"></span>
         <span class="ornament bl"></span>
