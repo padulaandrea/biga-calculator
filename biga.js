@@ -131,7 +131,8 @@
     p.set('ft',  inputs.flourTemp.value);
     p.set('wt',  inputs.waterTemp.value);
     p.set('y',   inputs.yeastPct.value);
-    history.replaceState(null, '', '?' + p.toString());
+    try { history.replaceState(null, '', '?' + p.toString()); } catch (_) {}
+    // silently ignore SecurityError on file:// or restricted contexts
   }
 
   // ---- Progressive slider fills ----
@@ -483,16 +484,25 @@
   const shareBtn = document.getElementById('shareBtn');
   shareBtn.addEventListener('click', async () => {
     const url = location.href;
-    if (navigator.share) {
-      try { await navigator.share({ title: 'My Biga Recipe', url }); } catch (_) {}
-    } else {
+    // Use the native share sheet only on real touch devices (phones/tablets).
+    // On desktop Chrome navigator.share is defined but opens a confusing system dialog.
+    const isTouchDevice = window.matchMedia('(hover: none) and (pointer: coarse)').matches;
+    if (isTouchDevice && navigator.share) {
       try {
-        await navigator.clipboard.writeText(url);
-        shareBtn.textContent = '✓ Copied!';
-        setTimeout(() => { shareBtn.textContent = '🔗 Share'; }, 2000);
-      } catch (_) {
-        window.prompt('Copy this link:', url);
+        await navigator.share({ title: 'My Biga Recipe', url });
+        return;
+      } catch (e) {
+        if (e.name === 'AbortError') return; // user dismissed — that's fine
+        // any other error: fall through to clipboard below
       }
+    }
+    // Desktop (or share fallback): copy URL to clipboard
+    try {
+      await navigator.clipboard.writeText(url);
+      shareBtn.textContent = '✓ Copied!';
+      setTimeout(() => { shareBtn.textContent = '🔗 Share'; }, 2000);
+    } catch (_) {
+      window.prompt('Copy this link:', url);
     }
   });
 
