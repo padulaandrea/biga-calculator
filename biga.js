@@ -86,6 +86,17 @@
   // addMinutes, addHours, bigaHours, bigaStartTemp, phaseHours, computeSchedule
   // are loaded from biga-calc.js (global scope) — see index.html script order.
 
+  // ---- Progressive slider fills ----
+  function updateSliderFill(el) {
+    const min = parseFloat(el.min) || 0;
+    const max = parseFloat(el.max) || 100;
+    const pct = ((parseFloat(el.value) - min) / (max - min) * 100).toFixed(2) + '%';
+    el.style.setProperty('--fill', pct);
+  }
+  function updateAllSliderFills() {
+    document.querySelectorAll('input[type="range"]').forEach(updateSliderFill);
+  }
+
   // ---- Live label updates ----
   function updateLabels() {
     out.bigaHydVal.textContent   = `${inputs.bigaHyd.value}%`;
@@ -271,6 +282,7 @@
   // ---- Main calc ----
   function calc() {
     updateLabels();
+    updateAllSliderFills();
     syncRTVisibility();
     syncProVisibility();
     updateTempHint();
@@ -393,13 +405,13 @@
     let steps;
     if (!schedule.hybrid) {
       steps = [
-        { t: tKnead,   text: `<strong>Knead the biga.</strong>${kneadDetail} Crumble yeast into the water, then combine with flour. Mix to rough lumps — do NOT develop gluten.` },
-        { t: tKnead,   text: `<strong>Cover and wait.</strong> Rest the biga at <strong>${schedule.mainTempC}°C</strong> for <strong>${Math.round(schedule.totalHours)} hours</strong>.` },
-        { t: tReady,   text: `<strong>Biga ready — start the bulk.</strong> Break the biga into the <strong>first 55–60% of the water</strong>. Add flour, ${oilStr}${maltStr}then salt. Knead 8–12 min, streaming in the reserved water gradually until fully absorbed.` },
-        { t: tMixDone, text: `<strong>Bulk rest.</strong> Cover and rest at room temperature for ~30 minutes.` },
-        { t: tBulkEnd, text: `<strong>Divide & shape.</strong> Form <strong>${N} × ${W} g</strong> balls and round them tightly.` },
-        { t: tShaped,  text: `<strong>Final proof.</strong> Cover and proof at 22–24°C until visibly puffy and jiggly (~4–5 h).` },
-        { t: tBake,    text: `<strong>Bake!</strong> Stretch by hand and bake on a hot stone, steel, or wood-fired oven at the highest heat you can manage.` },
+        { t: tKnead,   icon: '🤌', text: `<strong>Knead the biga.</strong>${kneadDetail} Crumble yeast into the water, then combine with flour. Mix to rough lumps — do NOT develop gluten.` },
+        { t: tKnead,   icon: '⏳', text: `<strong>Cover and wait.</strong> Rest the biga at <strong>${schedule.mainTempC}°C</strong> for <strong>${Math.round(schedule.totalHours)} hours</strong>.` },
+        { t: tReady,   icon: '✅', text: `<strong>Biga ready — start the bulk.</strong> Break the biga into the <strong>first 55–60% of the water</strong>. Add flour, ${oilStr}${maltStr}then salt. Knead 8–12 min, streaming in the reserved water gradually until fully absorbed.` },
+        { t: tMixDone, icon: '💤', text: `<strong>Bulk rest.</strong> Cover and rest at room temperature for ~30 minutes.` },
+        { t: tBulkEnd, icon: '✂️', text: `<strong>Divide & shape.</strong> Form <strong>${N} × ${W} g</strong> balls and round them tightly.` },
+        { t: tShaped,  icon: '🕐', text: `<strong>Final proof.</strong> Cover and proof at 22–24°C until visibly puffy and jiggly (~4–5 h).` },
+        { t: tBake,    icon: '🔥', text: `<strong>Bake!</strong> Stretch by hand and bake on a hot stone, steel, or wood-fired oven at the highest heat you can manage.` },
       ];
     } else {
       const moveT = schedule.moveToColdTime;
@@ -407,20 +419,20 @@
         ? `Watch closely — the biga may be ready at room temp before reaching the fridge.`
         : `Then move it to <strong>${schedule.coldTempC}°C</strong> for <strong>${schedule.coldHours.toFixed(1)} more hours</strong>.`;
       steps = [
-        { t: tKnead,   text: `<strong>Knead the biga.</strong>${kneadDetail} Crumble yeast into the water, then combine with flour. Mix to rough lumps — do NOT develop gluten.` },
-        { t: tKnead,   text: `<strong>Rest at room temperature.</strong> Cover and let the biga sit at <strong>${schedule.rtTempC}°C</strong> for <strong>${schedule.rtHours.toFixed(1)} hours</strong> to kickstart fermentation.` },
-        { t: moveT,    text: `<strong>Move to cold storage.</strong> Transfer the biga to <strong>${schedule.coldTempC}°C</strong>. ${overflowStr}` },
-        { t: tReady,   text: `<strong>Biga ready — start the bulk.</strong> Break the biga into the <strong>first 55–60% of the water</strong>. Add flour, ${oilStr}${maltStr}then salt. Knead 8–12 min, streaming in the reserved water gradually until fully absorbed.` },
-        { t: tMixDone, text: `<strong>Bulk rest.</strong> Cover and rest at room temperature for ~30 minutes.` },
-        { t: tBulkEnd, text: `<strong>Divide & shape.</strong> Form <strong>${N} × ${W} g</strong> balls and round them tightly.` },
-        { t: tShaped,  text: `<strong>Final proof.</strong> Cover and proof at 22–24°C until visibly puffy and jiggly (~4–5 h).` },
-        { t: tBake,    text: `<strong>Bake!</strong> Stretch by hand and bake on a hot stone, steel, or wood-fired oven at the highest heat you can manage.` },
+        { t: tKnead,   icon: '🤌', text: `<strong>Knead the biga.</strong>${kneadDetail} Crumble yeast into the water, then combine with flour. Mix to rough lumps — do NOT develop gluten.` },
+        { t: tKnead,   icon: '🏠', text: `<strong>Rest at room temperature.</strong> Cover and let the biga sit at <strong>${schedule.rtTempC}°C</strong> for <strong>${schedule.rtHours.toFixed(1)} hours</strong> to kickstart fermentation.` },
+        { t: moveT,    icon: '❄️', text: `<strong>Move to cold storage.</strong> Transfer the biga to <strong>${schedule.coldTempC}°C</strong>. ${overflowStr}` },
+        { t: tReady,   icon: '✅', text: `<strong>Biga ready — start the bulk.</strong> Break the biga into the <strong>first 55–60% of the water</strong>. Add flour, ${oilStr}${maltStr}then salt. Knead 8–12 min, streaming in the reserved water gradually until fully absorbed.` },
+        { t: tMixDone, icon: '💤', text: `<strong>Bulk rest.</strong> Cover and rest at room temperature for ~30 minutes.` },
+        { t: tBulkEnd, icon: '✂️', text: `<strong>Divide & shape.</strong> Form <strong>${N} × ${W} g</strong> balls and round them tightly.` },
+        { t: tShaped,  icon: '🕐', text: `<strong>Final proof.</strong> Cover and proof at 22–24°C until visibly puffy and jiggly (~4–5 h).` },
+        { t: tBake,    icon: '🔥', text: `<strong>Bake!</strong> Stretch by hand and bake on a hot stone, steel, or wood-fired oven at the highest heat you can manage.` },
       ];
     }
 
-    out.schedule.innerHTML = steps.map((s, i) => `
+    out.schedule.innerHTML = steps.map((s) => `
       <div class="step">
-        <div class="step-num">${i + 1}</div>
+        <div class="step-num">${s.icon}</div>
         <div class="step-text">${s.text}</div>
         <div class="step-time">
           <span class="day">${fmtDay(s.t)}</span>

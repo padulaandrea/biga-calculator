@@ -159,7 +159,14 @@ h1 em {
 input[type="range"] {
   -webkit-appearance: none; appearance: none;
   width: 100%; height: 4px;
-  background: var(--tan-light); border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    var(--terracotta) 0%,
+    var(--terracotta) var(--fill, 50%),
+    var(--tan-light) var(--fill, 50%),
+    var(--tan-light) 100%
+  );
+  border-radius: 2px;
   outline: none; cursor: pointer;
 }
 input[type="range"]::-webkit-slider-thumb {
@@ -495,9 +502,10 @@ input[type="range"]::-moz-range-thumb {
 }
 .step + .step { border-top: 1px dotted var(--rule); }
 .step-num {
-  font-family: 'Fraunces', serif; font-style: italic;
-  font-size: 18px; color: var(--terracotta);
-  font-variation-settings: 'opsz' 18;
+  font-size: 20px;
+  line-height: 1;
+  text-align: center;
+  padding-top: 1px;
 }
 .step-text {
   font-family: 'Fraunces', serif; font-size: 14.5px;
