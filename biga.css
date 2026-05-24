@@ -191,7 +191,7 @@ input[type="range"]::-moz-range-thumb {
 /* ---------- Toggle switches ---------- */
 .toggle-row {
   display: flex; justify-content: space-between; align-items: center;
-  padding: 14px 16px;
+  padding: 10px 14px;
   background: var(--cream);
   border: 1px solid var(--rule);
   border-radius: 4px;
@@ -268,7 +268,7 @@ input[type="range"]::-moz-range-thumb {
 .controls-collapse.visible {
   max-height: 800px;
   opacity: 1;
-  padding: 22px 22px 18px;
+  padding: 16px 18px 14px;
   background: var(--cream-soft);
   border: 1px solid var(--terracotta);
   border-top: none;
@@ -278,7 +278,7 @@ input[type="range"]::-moz-range-thumb {
 .controls-collapse.pro.visible {
   border-color: var(--olive);
 }
-.controls-collapse .section { margin-bottom: 20px; }
+.controls-collapse .section { margin-bottom: 16px; }
 .controls-collapse .section:last-child { margin-bottom: 0; }
 
 /* Pro mode readout */
@@ -600,6 +600,18 @@ footer {
 
   /* Tighter panel padding */
   .panel { padding: 28px 20px; }
+
+  /* Compact toggle rows on mobile */
+  .toggle-row { padding: 8px 12px; }
+  .toggle-label { font-size: 12px; letter-spacing: .08em; }
+  .toggle-label small { display: none; }   /* hide subtitle — emoji + title is enough */
+
+  /* Compact expanded sections on mobile */
+  .controls-collapse.visible { padding: 12px 14px 10px; }
+  .controls-collapse .section { margin-bottom: 12px; }
+
+  /* Smaller value readout inside collapsed sections */
+  .controls-collapse .label-value { font-size: 17px; }
 }
 
 /* corner ornaments */
