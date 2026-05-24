@@ -13,6 +13,7 @@
     usePro:     $('usePro'),
     flourTemp:  $('flourTemp'),
     waterTemp:  $('waterTemp'),
+    yeastPct:   $('yeastPct'),
     bigaPct:    $('bigaPct'),
     totalHyd:   $('totalHyd'),
     salt:       $('salt'),
@@ -27,6 +28,7 @@
     rtHoursVal:         $('rtHoursVal'),
     flourTempVal:       $('flourTempVal'),
     waterTempVal:       $('waterTempVal'),
+    yeastPctVal:        $('yeastPctVal'),
     bigaPctVal:         $('bigaPctVal'),
     totalHydVal:        $('totalHydVal'),
     saltVal:            $('saltVal'),
@@ -92,6 +94,7 @@
     out.rtHoursVal.textContent   = `${parseFloat(inputs.rtHours.value).toFixed(1)} h`;
     out.flourTempVal.textContent = `${inputs.flourTemp.value}°C`;
     out.waterTempVal.textContent = `${inputs.waterTemp.value}°C`;
+    out.yeastPctVal.textContent  = `${parseFloat(inputs.yeastPct.value).toFixed(2)}%`;
     out.bigaPctVal.textContent   = `${inputs.bigaPct.value}%`;
     out.totalHydVal.textContent  = `${inputs.totalHyd.value}%`;
     out.saltVal.textContent      = `${parseFloat(inputs.salt.value).toFixed(1)}%`;
@@ -293,8 +296,8 @@
 
     const bigaFlour      = flour * bigaPct;
     const bigaWater      = bigaFlour * bigaHyd;
-    const FRESH_YEAST_PCT = 1.0;
-    const bigaYeast      = bigaFlour * FRESH_YEAST_PCT / 100;
+    const freshYeastPct  = inputs.usePro.checked ? parseFloat(inputs.yeastPct.value) : 1.0;
+    const bigaYeast      = bigaFlour * freshYeastPct / 100;
 
     const finalFlour = flour - bigaFlour;
     const finalWater = totalWater - bigaWater;
@@ -339,7 +342,7 @@
     out.bigaList.innerHTML =
       row('Flour',       flourNote, `${fmt(bigaFlour)} g`, true) +
       row('Water',       waterNote, `${fmt(bigaWater)} g`, true) +
-      row('Fresh yeast', `or ${fmt(bigaYeast/3, 2)} g dry · 1% of biga flour`, `${fmt(bigaYeast, 2)} g`);
+      row('Fresh yeast', `or ${fmt(bigaYeast/3, 2)} g dry · ${freshYeastPct.toFixed(2)}% of biga flour`, `${fmt(bigaYeast, 2)} g`);
 
     // ---- Biga schedule ----
     const startTime = inputs.startTime.value ? new Date(inputs.startTime.value) : new Date();
@@ -350,7 +353,8 @@
       parseFloat(inputs.rtTemp.value),
       parseFloat(inputs.rtHours.value),
       tempC,
-      bigaStartC
+      bigaStartC,
+      freshYeastPct
     );
 
     // ---- Render biga results (both blocks) ----

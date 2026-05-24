@@ -139,6 +139,14 @@
                 <input type="range" id="waterTemp" min="0" max="40" value="17" step="1" />
                 <div class="range-bounds"><span>0°C</span><span>40°C</span></div>
               </div>
+              <div class="section">
+                <div class="section-label">
+                  <span class="label-text">Fresh Yeast</span>
+                  <span class="label-value" id="yeastPctVal">1.0%</span>
+                </div>
+                <input type="range" id="yeastPct" min="0.3" max="2.0" value="1.0" step="0.05" />
+                <div class="range-bounds"><span>0.3%</span><span>2.0%</span></div>
+              </div>
               <div class="pro-readout" id="proReadout"></div>
             </div>
           </div>
@@ -170,7 +178,7 @@
               <span class="label-text">Salt</span>
               <span class="label-value" id="saltVal">2.8%</span>
             </div>
-            <input type="range" id="salt" min="0" max="4" value="2.8" step="0.1" />
+            <input type="range" id="salt" min="0" max="4" value="2" step="0.1" />
             <div class="range-bounds"><span>0%</span><span>4%</span></div>
           </div>
 
@@ -179,7 +187,7 @@
               <span class="label-text">Olive Oil</span>
               <span class="label-value" id="oilVal">0%</span>
             </div>
-            <input type="range" id="oil" min="0" max="6" value="0" step="0.1" />
+            <input type="range" id="oil" min="0" max="6" value="2.5" step="0.1" />
             <div class="range-bounds"><span>0%</span><span>6%</span></div>
           </div>
 
@@ -188,7 +196,7 @@
               <span class="label-text">Malt</span>
               <span class="label-value" id="maltVal">0%</span>
             </div>
-            <input type="range" id="malt" min="0" max="2" value="0" step="0.05" />
+            <input type="range" id="malt" min="0" max="2" value="1" step="0.05" />
             <div class="range-bounds"><span>0%</span><span>2%</span></div>
           </div>
         </div>

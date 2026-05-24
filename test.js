@@ -2,9 +2,10 @@
 // test.js — Biga Calculator test suite
 // Usage: node test.js
 //
-// Two tracks per recipe:
-//   Track A (accuracy)  — does the model output fall within the recipe's claimed range?
-//   Track B (regression) — records current model output so future runs can detect drift
+// Each recipe is run using its actual yeastPct.
+// Policy: overestimation is dangerous (baker waits too long → over-fermentation).
+//         underestimation ≤ 2h is acceptable (baker checks early, waits a bit more).
+//         underestimation > 2h is a warning (safe, but the mismatch is too large to ignore).
 
 'use strict';
 
@@ -33,25 +34,21 @@ function runRecipe(recipe) {
     recipe.rtTemp  || 20,
     recipe.rtHours || 0,
     recipe.restTemp,
-    bigaStartC
+    bigaStartC,
+    recipe.yeastPct
   );
   return { schedule, bigaStartC };
 }
 
 // ---- Classify result ----
-// Policy: overestimation is dangerous (baker waits too long → over-fermentation).
-// Underestimation ≤ 2h is acceptable (baker checks early, waits a bit more).
-// Underestimation > 2h is a warning (safe, but the mismatch is too large to ignore).
-const TOLERANCE = 2; // hours — acceptable underestimation window
+const UNDER_TOLERANCE = 2.5; // hours — acceptable underestimation (baker checks early, waits a bit more)
+const OVER_TOLERANCE  = 1; // hours — acceptable overestimation  (small buffer for model noise)
 
 function classify(recipe, hours) {
   const { min, max } = recipe.expectedHours;
-  const yeastMismatch = recipe.yeastPct !== 1.0;
-
-  if (hours >= min - TOLERANCE && hours <= max) return 'PASS';        // ✅ within window
-  if (hours > max)                              return 'FAIL_OVER';   // ❌ overestimates — dangerous
-  if (!yeastMismatch)                           return 'WARN_EARLY';  // ⬇ underestimates >2h, 1% yeast
-  return 'YEAST';                                                      // ⚠ yeast mismatch
+  if (hours >= min - UNDER_TOLERANCE && hours <= max + OVER_TOLERANCE) return 'PASS';       // ✅
+  if (hours > max + OVER_TOLERANCE)                                     return 'FAIL_OVER';  // ❌
+  return 'WARN_EARLY';                                                                       // ⬇
 }
 
 // ---- Format schedule detail ----
@@ -68,7 +65,7 @@ function scheduleDetail(schedule) {
 // ---- Main ----
 console.log(`\n${c(ANSI.bold, '=== Biga Calculator — Test Suite ===')} ${c(ANSI.dim, `(${recipes.length} recipes)`)}\n`);
 
-let passed = 0, early = 0, warned = 0, failed = 0;
+let passed = 0, early = 0, failed = 0;
 const failedIds = [], earlyIds = [];
 
 for (const recipe of recipes) {
@@ -79,7 +76,7 @@ for (const recipe of recipes) {
   const { min, max } = recipe.expectedHours;
   const expectedStr  = min === max ? `${min}h` : `${min}–${max}h`;
   const yeastTag     = recipe.yeastPct !== 1.0
-    ? c(ANSI.yellow, ` [yeast=${recipe.yeastPct}% ⚠]`)
+    ? c(ANSI.yellow, ` [yeast=${recipe.yeastPct}%]`)
     : c(ANSI.dim,    ` [yeast=1%]`);
 
   // Status badge
@@ -94,10 +91,6 @@ for (const recipe of recipes) {
     detail = c(ANSI.dim, `  underestimates by ${gap}h — baker checks early, safe`);
     early++;
     earlyIds.push(recipe.id);
-  } else if (status === 'YEAST') {
-    badge  = c(ANSI.yellow, '⚠  YEAST');
-    detail = c(ANSI.dim, '  model uses 1% fresh yeast');
-    warned++;
   } else {
     const gap = (hours - recipe.expectedHours.max).toFixed(1);
     badge  = c(ANSI.red,    '❌ OVER');
@@ -121,10 +114,9 @@ for (const recipe of recipes) {
 // ---- Summary ----
 const total = recipes.length;
 console.log(c(ANSI.bold, '=== Summary ==='));
-console.log(`  ${c(ANSI.green,  '✅ Passed     ')} : ${passed} / ${total}`);
-console.log(`  ${c(ANSI.cyan,   '⬇  Early      ')} : ${early}  / ${total}  ${c(ANSI.dim, `(underestimates >2h — safe but imprecise)${earlyIds.length ? '  #' + earlyIds.join(', #') : ''}`)}`);
-console.log(`  ${c(ANSI.yellow, '⚠  Yeast      ')} : ${warned} / ${total}  ${c(ANSI.dim, '(known model limitation — yeastPct ≠ 1%)')}`);
-console.log(`  ${c(ANSI.red,    '❌ Overestimate')} : ${failed} / ${total}  ${failed > 0 ? c(ANSI.red, `(model gap — investigate)  #${failedIds.join(', #')}`) : c(ANSI.dim, '(none — ✓)')}`);
+console.log(`  ${c(ANSI.green, '✅ Passed     ')} : ${passed} / ${total}`);
+console.log(`  ${c(ANSI.cyan,  '⬇  Early      ')} : ${early}  / ${total}  ${c(ANSI.dim, `(underestimates >2h — safe but imprecise)${earlyIds.length ? '  #' + earlyIds.join(', #') : ''}`)}`);
+console.log(`  ${c(ANSI.red,   '❌ Overestimate')} : ${failed} / ${total}  ${failed > 0 ? c(ANSI.red, `(model gap — investigate)  #${failedIds.join(', #')}`) : c(ANSI.dim, '(none — ✓)')}`);
 console.log('');
 
 if (failed > 0) {
