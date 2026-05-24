@@ -159,15 +159,31 @@
   }
 
   // ---- Build the biga results HTML (used by both preview + recipe card) ----
-  function buildResultsHTML(s) {
+  function buildResultsHTML(s, bigaStartC) {
     const dayClock = d => `<span class="muted">${fmtDay(d)}</span> <span class="strong">${fmtClock(d)}</span>`;
+
+    // Contextual emoji for the starting temperature
+    function tempBadge(c) {
+      if (c <=  4) return ' ❄️';
+      if (c <= 10) return ' 🧊';
+      if (c <= 22) return '';
+      if (c <= 27) return ' 🌡️';
+      return ' ♨️';
+    }
+    const kneadTempRow = resultRow(
+      'Temperature after kneading', 'biga starts here',
+      `<span class="strong">${bigaStartC.toFixed(1)}°C${tempBadge(bigaStartC)}</span>`
+    );
+
     if (!s.hybrid) {
       return [
+        kneadTempRow,
         resultRow('Biga rest time', null, `<span class="strong">${Math.round(s.totalHours)} hours</span>`),
         resultRow('Biga ready',     null, dayClock(s.readyTime)),
       ].join('');
     }
     return [
+      kneadTempRow,
       resultRow('Room temp phase', `at ${s.rtTempC}°C`,   `<span class="strong">${s.rtHours.toFixed(1)} h</span>`),
       resultRow('Cold phase',      `at ${s.coldTempC}°C`, `<span class="strong">${s.coldHours.toFixed(1)} h</span>`),
       resultRow('Total rest time', null, `<span class="strong">${s.totalHours.toFixed(1)} hours</span>`, true),
@@ -370,7 +386,7 @@
     );
 
     // ---- Render biga results (both blocks) ----
-    const resultsHTML = buildResultsHTML(schedule);
+    const resultsHTML = buildResultsHTML(schedule, bigaStartC);
     out.bigaResultsContent.innerHTML = resultsHTML;
     out.bigaPreviewContent.innerHTML = resultsHTML;
 
