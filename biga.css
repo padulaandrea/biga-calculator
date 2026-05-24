@@ -654,32 +654,36 @@ footer {
 
 /* ---------- Print ---------- */
 @media print {
-  /* ── Reset page chrome ── */
+  @page { margin: 1cm; }
+
+  /* ── 1. Strip page chrome ── */
   html, body {
     background: white !important;
     background-image: none !important;
     color: #1a0e08;
-    font-size: 11pt;
+    font-size: 9pt;
   }
   body::before { display: none; }   /* noise texture */
 
-  /* ── Layout: single column, no wrap padding ── */
+  /* ── 2. Flatten outer layout ── */
   .wrap { padding: 0; max-width: 100%; }
   .grid { display: block; }
 
-  /* ── Hide everything except the recipe card ── */
-  header              { display: none; }
-  .mobile-tabs        { display: none !important; }
-  .tab-pane[data-pane="configure"] { display: none !important; }
-  .biga-preview       { display: none !important; }
-  footer              { display: none; }
-  .recipe-actions     { display: none; }
-  .ornament           { display: none; }
+  /* ── 3. Hide everything that isn't the recipe ──
+     Belt-and-suspenders: target by class AND by position in .grid */
+  header,
+  footer,
+  .mobile-tabs,
+  .recipe-actions,
+  .biga-preview,
+  .ornament,
+  .tab-pane[data-pane="configure"],
+  .grid > :first-child { display: none !important; }
 
-  /* ── Force recipe pane visible (overrides mobile tab hiding) ── */
+  /* ── 4. Force recipe pane visible (overrides mobile tab hiding) ── */
   .tab-pane[data-pane="recipe"] { display: block !important; }
 
-  /* ── Strip card chrome from recipe ── */
+  /* ── 5. Recipe card: 2-column layout (ingredients | timeline) ── */
   .recipe {
     position: static !important;
     max-height: none !important;
@@ -688,38 +692,75 @@ footer {
     border: none !important;
     padding: 0 !important;
     background: white !important;
+    display: grid !important;
+    grid-template-columns: 1fr 1fr;
+    gap: 0 20pt;
+    align-items: start;
   }
 
-  /* ── Recipe header ── */
+  /* ── 6. Grid area assignments ── */
+  .recipe-header    { grid-column: 1 / -1; }
+  .ingredient-group { grid-column: 1; }
+  .biga-results     { grid-column: 1; }
+  .timeline         { grid-column: 2; grid-row: 2 / 99; }
+
+  /* ── 7. Recipe header ── */
   .recipe-header {
-    padding-bottom: 14pt;
-    margin-bottom: 18pt;
+    padding-bottom: 8pt;
+    margin-bottom: 10pt;
+    border-bottom: 0.5pt solid #d4a870;
   }
-  .recipe-title { font-size: 26pt; }
-  .recipe-meta  { font-size: 10pt; }
+  .recipe-eyebrow { font-size: 6.5pt; margin-bottom: 3pt; }
+  .recipe-title   { font-size: 18pt; }
+  .recipe-meta    { font-size: 7.5pt; margin-top: 3pt; }
 
-  /* ── Ingredient groups: avoid splitting across pages ── */
-  .ingredient-group { page-break-inside: avoid; margin-bottom: 14pt; }
-  .ing-row          { page-break-inside: avoid; }
+  /* ── 8. Ingredient groups ── */
+  .ingredient-group { margin-bottom: 8pt; }
+  .group-title { font-size: 6.5pt; margin-bottom: 5pt; letter-spacing: .18em; }
+  .ing-row     { padding: 3.5pt 0; }
+  .ing-row.ing-sub { padding: 2.5pt 0 2.5pt 14pt; }
+  .ing-name    { font-size: 9pt; }
+  .ing-name small  { font-size: 7pt; }
+  .ing-amount  { font-size: 9.5pt; }
 
-  /* ── Biga results: keep together ── */
+  /* ── 9. Biga results ── */
   .biga-results {
-    page-break-inside: avoid;
+    margin-bottom: 8pt;
+    padding: 7pt 9pt !important;
+    border-left: 2pt solid #c41530 !important;
+    border-radius: 1pt;
     background: #f7f2ea !important;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
+  .biga-results-title { font-size: 6.5pt; margin-bottom: 4pt; }
+  .biga-results-row   { padding: 3pt 0; }
+  .br-label { font-size: 8.5pt; }
+  .br-value { font-size: 9pt; }
 
-  /* ── Timeline: keep steps together ── */
+  /* ── 10. Timeline ── */
   .timeline {
+    padding: 9pt 11pt !important;
     background: #f7f2ea !important;
+    border: 0.5pt dashed #d4a870 !important;
+    border-radius: 2pt;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
-  .step          { page-break-inside: avoid; }
-  .timeline-title { page-break-after: avoid; }
+  .timeline-title { font-size: 6.5pt; margin-bottom: 7pt; }
+  .step {
+    grid-template-columns: 16pt 1fr auto;
+    gap: 5pt;
+    padding: 4.5pt 0;
+    page-break-inside: avoid;
+  }
+  .step-num    { font-size: 12pt; }
+  .step-text   { font-size: 7.5pt; line-height: 1.35; }
+  .step-time   { line-height: 1.25; }
+  .step-time .day   { font-size: 6pt; }
+  .step-time .clock { font-size: 8.5pt; }
 
-  /* ── Suppress URL decoration on links ── */
+  /* ── 11. No URL decoration on links ── */
   a[href]::after { content: none !important; }
 }
 
