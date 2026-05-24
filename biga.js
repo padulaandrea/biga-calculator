@@ -193,106 +193,71 @@
 
   // ---- Pro mode readout ----
   function updateProReadout(targetTempC, bigaStartC, hydPct) {
-    const flourT = parseFloat(inputs.flourTemp.value);
-    const waterT = parseFloat(inputs.waterTemp.value);
-    const deltaStart = bigaStartC - targetTempC;
-    const absDelta = Math.abs(deltaStart);
+    const flourT  = parseFloat(inputs.flourTemp.value);
+    const waterT  = parseFloat(inputs.waterTemp.value);
+    const delta   = bigaStartC - targetTempC;  // + = starts warm · − = starts cold
+    const absDelta = Math.abs(delta);
 
-    // Concrete time impact: how much the warm/cold start shifts ready time vs.
-    // a biga that starts already at the target temperature.
-    const timeWithStart = phaseHours(targetTempC, hydPct, bigaStartC);
-    const timeAtTarget  = bigaHours(targetTempC, hydPct);
-    const timeDelta     = timeWithStart - timeAtTarget;   // − = faster · + = slower
-
-    // ---- Recommendation: what water temp would land biga exactly at target ----
-    // From bigaStartTemp = (water + flour)/2 + 1 = target  →  water = 2*target − flour − 2
-    const recommended    = 2 * targetTempC - flourT - 2;
-    const recAchievable  = (recommended >= 0 && recommended <= 40);
-
-    let recBlock;
-    if (recAchievable) {
-      const deltaWater = waterT - recommended;
-      let recNote;
-      if (Math.abs(deltaWater) < 1.5) {
-        recNote = `<span class="note">✓ matches recommended water</span>`;
-      } else if (deltaWater < 0) {
-        recNote = `<span class="note">${Math.abs(deltaWater).toFixed(0)}°C colder than recommended</span>`;
-      } else {
-        recNote = `<span class="note">${deltaWater.toFixed(0)}°C warmer than recommended</span>`;
-      }
-
-      let giorilliNote = '';
-      if (targetTempC >= 14 && targetTempC <= 22) {
-        const giorilli = 55 - flourT - targetTempC;
-        giorilliNote = `<br><span class="note">(Giorilli's classical "55 − flour − target" → ${giorilli}°C; an approximation calibrated for ~19°C biga)</span>`;
-      }
-
-      recBlock = `
-        <div>
-          <span class="label">To land biga at target ${targetTempC}°C</span>
-          Water = 2 × ${targetTempC}°C − ${flourT}°C flour − 2°C friction →
-          <span class="value">${recommended}°C water</span>
-          <br>${recNote}${giorilliNote}
-        </div>`;
-    } else if (recommended < 0) {
-      // Cold target with warm flour: can't hit target with water alone — but
-      // that's optional, not a failure. The biga simply starts warm and cools.
-      const idealIng = Math.max(0, targetTempC - 1);
-      recBlock = `
-        <div>
-          <span class="label">Optional: chill the flour to land biga at target</span>
-          With ${flourT}°C flour, no water temp can land the biga at exactly
-          ${targetTempC}°C. <strong>You don't have to</strong> — the biga will
-          simply start warm and cool down in storage. The time impact is shown
-          below. If you do want a clean start at target, chill both flour and
-          water to ≈ <span class="value">${idealIng}°C</span>.
-        </div>`;
-    } else {
-      // Warm target needing very hot water — same framing
-      const idealIng = Math.min(35, targetTempC - 1);
-      recBlock = `
-        <div>
-          <span class="label">Optional: warm the flour to land biga at target</span>
-          With ${flourT}°C flour, water would need to be ${recommended}°C — hot
-          enough to harm yeast. The biga will simply start cool and warm up in
-          storage; time impact below. To start exactly at target, warm both
-          ingredients to ≈ <span class="value">${idealIng}°C</span>.
-        </div>`;
+    // Time shift vs a biga that starts exactly at target
+    const timeDelta = phaseHours(targetTempC, hydPct, bigaStartC) - bigaHours(targetTempC, hydPct);
+    function fmtShift(h) {
+      const abs = Math.abs(h);
+      if (abs < 0.1) return null;
+      const dir = h < 0 ? 'earlier' : 'later';
+      return abs < 1 ? `~${Math.round(abs * 60)} min ${dir}` : `~${abs.toFixed(1)} h ${dir}`;
     }
 
-    // ---- Biga start: severity label + actual time impact from the model ----
-    const dir = deltaStart > 0 ? 'above' : 'below';
-    let severityLabel, impactText;
-
+    // ── Block 1: biga starting temperature ──────────────────────────────────
+    let startNote;
     if (absDelta < 1.5) {
-      severityLabel = '✓ at target';
-      impactText = 'ferment runs on schedule';
+      startNote = `✓ right at target — fermentation starts clean`;
     } else {
-      if (absDelta < 5)        severityLabel = `${absDelta.toFixed(1)}°C ${dir} target`;
-      else if (absDelta < 10)  severityLabel = `${absDelta.toFixed(1)}°C ${dir} target — notable`;
-      else if (absDelta < 15)  severityLabel = `${absDelta.toFixed(1)}°C ${dir} target ⚠`;
-      else                     severityLabel = `${absDelta.toFixed(1)}°C ${dir} target ⚠ unusual`;
-
-      const transition = deltaStart > 0 ? 'cool toward' : 'warm toward';
-      if (Math.abs(timeDelta) < 0.3) {
-        impactText = `biga will ${transition} target — minimal time impact`;
-      } else if (timeDelta < 0) {
-        impactText = `biga will ${transition} target — ready about <strong>${Math.abs(timeDelta).toFixed(1)} h faster</strong> than a steady-state ferment at ${targetTempC}°C (warmer phase speeds early fermentation)`;
-      } else {
-        impactText = `biga will ${transition} target — ready about <strong>${timeDelta.toFixed(1)} h slower</strong> than a steady-state ferment at ${targetTempC}°C (cold phase delays early fermentation)`;
-      }
-      // Over-fermentation caution for very warm starts heading to cold
-      if (deltaStart > 12 && targetTempC < 14) {
-        impactText += `<br><span class="note">⚠ Long warm phase before reaching cold storage — watch for over-fermentation; chilling the flour gives a cleaner result.</span>`;
+      const direction = delta > 0 ? 'warm' : 'cold';
+      const action    = delta > 0 ? `cools toward ${targetTempC}°C` : `warms toward ${targetTempC}°C`;
+      const shift     = fmtShift(timeDelta);
+      startNote = `starts ${absDelta.toFixed(1)}°C ${direction} — ${action} in storage${shift ? ` · ready ${shift}` : ''}`;
+      if (delta > 12 && targetTempC < 14) {
+        startNote += ` · ⚠ very warm start before cold storage — consider chilling the flour`;
       }
     }
 
-    out.proReadout.innerHTML = recBlock + `
+    // ── Block 2: ideal water temperature ────────────────────────────────────
+    // bigaStartTemp = (water + flour) / 2 + 1 = target  →  water = 2×target − flour − 2
+    const recommended  = 2 * targetTempC - flourT - 2;
+    let waterBlock;
+    if (recommended < 0) {
+      const idealT = Math.max(0, targetTempC - 1);
+      waterBlock = `
+        <span class="label">Ideal water</span>
+        can't reach ${targetTempC}°C with water alone at ${flourT}°C flour —
+        chill both ingredients to ~<span class="value">${idealT}°C</span> for a clean start`;
+    } else if (recommended > 40) {
+      const idealT = Math.min(35, targetTempC - 1);
+      waterBlock = `
+        <span class="label">Ideal water</span>
+        would need ${recommended}°C — too hot for yeast.
+        Warm both flour and water to ~<span class="value">${idealT}°C</span> instead`;
+    } else {
+      const diff = waterT - recommended;
+      let matchNote;
+      if (Math.abs(diff) < 1.5) {
+        matchNote = `<span class="note">✓ your ${waterT}°C is spot on</span>`;
+      } else {
+        matchNote = `<span class="note">you set ${waterT}°C — ${Math.abs(diff).toFixed(0)}°C ${diff > 0 ? 'warmer' : 'colder'} than ideal</span>`;
+      }
+      waterBlock = `
+        <span class="label">Ideal water</span>
+        <span class="value">${recommended}°C</span> &ensp;${matchNote}`;
+    }
+
+    out.proReadout.innerHTML = `
       <div>
-        <span class="label">Your biga starts at</span>
+        <span class="label">Biga starts at</span>
         <span class="value">${bigaStartC.toFixed(1)}°C</span>
-        <br><span class="note">${severityLabel} — ${impactText}</span>
-      </div>`;
+        &ensp;<span class="note" style="font-style:normal;opacity:.55">target ${targetTempC}°C</span>
+        <br><span class="note">${startNote}</span>
+      </div>
+      <div>${waterBlock}</div>`;
   }
 
   // ---- Main calc ----
