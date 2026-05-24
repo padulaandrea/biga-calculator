@@ -391,6 +391,25 @@ input[type="range"]::-moz-range-thumb {
   margin-top: 14px; font-family: 'Fraunces', serif; font-style: italic;
   font-size: 14px; color: var(--espresso-2); opacity: .7;
 }
+.share-btn {
+  margin-top: 16px;
+  padding: 8px 20px;
+  background: transparent;
+  border: 1.5px solid var(--terracotta);
+  border-radius: 4px;
+  color: var(--terracotta);
+  font-family: 'Karla', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: background .15s, color .15s;
+}
+.share-btn:hover {
+  background: var(--terracotta);
+  color: var(--paper);
+}
 
 .ingredient-group { margin-bottom: 26px; }
 .group-title {

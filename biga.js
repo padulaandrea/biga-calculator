@@ -86,6 +86,54 @@
   // addMinutes, addHours, bigaHours, bigaStartTemp, phaseHours, computeSchedule
   // are loaded from biga-calc.js (global scope) — see index.html script order.
 
+  // ---- URL state: read on load, write on every calc ----
+  function readFromURL() {
+    const p = new URLSearchParams(location.search);
+    const set = (key, id, isCheck = false) => {
+      if (!p.has(key)) return;
+      const el = inputs[id];
+      if (isCheck) el.checked = p.get(key) === '1';
+      else         el.value   = p.get(key);
+    };
+    set('b',   'balls');
+    set('w',   'ballWeight');
+    set('bh',  'bigaHyd');
+    set('t',   'temp');
+    set('bp',  'bigaPct');
+    set('th',  'totalHyd');
+    set('s',   'salt');
+    set('o',   'oil');
+    set('m',   'malt');
+    set('rt',  'useRT',  true);
+    set('rtt', 'rtTemp');
+    set('rth', 'rtHours');
+    set('pro', 'usePro', true);
+    set('ft',  'flourTemp');
+    set('wt',  'waterTemp');
+    set('y',   'yeastPct');
+  }
+
+  function writeToURL() {
+    const p = new URLSearchParams();
+    p.set('b',   inputs.balls.value);
+    p.set('w',   inputs.ballWeight.value);
+    p.set('bh',  inputs.bigaHyd.value);
+    p.set('t',   inputs.temp.value);
+    p.set('bp',  inputs.bigaPct.value);
+    p.set('th',  inputs.totalHyd.value);
+    p.set('s',   inputs.salt.value);
+    p.set('o',   inputs.oil.value);
+    p.set('m',   inputs.malt.value);
+    p.set('rt',  inputs.useRT.checked  ? '1' : '0');
+    p.set('rtt', inputs.rtTemp.value);
+    p.set('rth', inputs.rtHours.value);
+    p.set('pro', inputs.usePro.checked ? '1' : '0');
+    p.set('ft',  inputs.flourTemp.value);
+    p.set('wt',  inputs.waterTemp.value);
+    p.set('y',   inputs.yeastPct.value);
+    history.replaceState(null, '', '?' + p.toString());
+  }
+
   // ---- Progressive slider fills ----
   function updateSliderFill(el) {
     const min = parseFloat(el.min) || 0;
@@ -411,6 +459,8 @@
       ];
     }
 
+    writeToURL();
+
     out.schedule.innerHTML = steps.map((s) => `
       <div class="step">
         <div class="step-num">${s.icon}</div>
@@ -426,7 +476,25 @@
     el.addEventListener('input', calc);
     el.addEventListener('change', calc);
   });
+  readFromURL();
   calc();
+
+  // ---- Share button ----
+  const shareBtn = document.getElementById('shareBtn');
+  shareBtn.addEventListener('click', async () => {
+    const url = location.href;
+    if (navigator.share) {
+      try { await navigator.share({ title: 'My Biga Recipe', url }); } catch (_) {}
+    } else {
+      try {
+        await navigator.clipboard.writeText(url);
+        shareBtn.textContent = '✓ Copied!';
+        setTimeout(() => { shareBtn.textContent = '🔗 Share'; }, 2000);
+      } catch (_) {
+        window.prompt('Copy this link:', url);
+      }
+    }
+  });
 
   // ---- Mobile tab switching ----
   document.querySelectorAll('.tab-btn').forEach(btn => {
