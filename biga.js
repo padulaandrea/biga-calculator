@@ -48,6 +48,14 @@
     tempHint:           $('tempHint'),
   };
 
+  // ---- Yeast type state ----
+  const YEAST = {
+    fresh:   { factor: 1,   name: 'Fresh yeast',      hint: 'refrigerated block or cake — full flavour' },
+    dry:     { factor: 3,   name: 'Active dry yeast',  hint: 'active dry — ÷ 3 from fresh · rehydrate in warm water first' },
+    instant: { factor: 3.3, name: 'Instant yeast',     hint: 'fast-acting or bread machine yeast — ÷ 3.3 from fresh · add directly' },
+  };
+  let currentYeastType = 'fresh';
+
   // ---- Init datetime to "now" rounded to next quarter hour ----
   function nowForInput() {
     const d = new Date();
@@ -111,6 +119,7 @@
     set('ft',  'flourTemp');
     set('wt',  'waterTemp');
     set('y',   'yeastPct');
+    if (p.has('yt') && YEAST[p.get('yt')]) currentYeastType = p.get('yt');
   }
 
   function writeToURL() {
@@ -131,6 +140,7 @@
     p.set('ft',  inputs.flourTemp.value);
     p.set('wt',  inputs.waterTemp.value);
     p.set('y',   inputs.yeastPct.value);
+    p.set('yt',  currentYeastType);
     try { history.replaceState(null, '', '?' + p.toString()); } catch (_) {}
     // silently ignore SecurityError on file:// or restricted contexts
   }
@@ -384,7 +394,14 @@
     out.bigaList.innerHTML =
       row('Flour',       flourNote, `${fmt(bigaFlour)} g`, true) +
       row('Water',       waterNote, `${fmt(bigaWater)} g`, true) +
-      row('Fresh yeast', `or ${fmt(bigaYeast/3, 2)} g dry · ${freshYeastPct.toFixed(2)}% of biga flour`, `${fmt(bigaYeast, 2)} g`);
+      (() => {
+        const y = YEAST[currentYeastType];
+        const displayG = bigaYeast / y.factor;
+        const altNote = currentYeastType === 'fresh'
+          ? `or ${fmt(bigaYeast/3, 2)} g dry · ${fmt(bigaYeast/3.3, 2)} g instant · ${freshYeastPct.toFixed(2)}% of biga flour`
+          : `or ${fmt(bigaYeast, 2)} g fresh · ${freshYeastPct.toFixed(2)}% of biga flour`;
+        return row(y.name, altNote, `${fmt(displayG, 2)} g`);
+      })();
 
     // ---- Biga schedule ----
     const startTime = inputs.startTime.value ? new Date(inputs.startTime.value) : new Date();
@@ -478,7 +495,27 @@
     el.addEventListener('change', calc);
   });
   readFromURL();
+  syncYeastSeg();
   calc();
+
+  // ---- Yeast type segmented control ----
+  const yeastHintEl = document.getElementById('yeastHint');
+  document.querySelectorAll('.seg-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentYeastType = btn.dataset.yeast;
+      yeastHintEl.textContent = YEAST[currentYeastType].hint;
+      calc();
+    });
+  });
+  // Sync seg-btn active state when restored from URL
+  function syncYeastSeg() {
+    document.querySelectorAll('.seg-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.yeast === currentYeastType);
+    });
+    yeastHintEl.textContent = YEAST[currentYeastType].hint;
+  }
 
   // ---- Share button ----
   const shareBtn = document.getElementById('shareBtn');

@@ -190,6 +190,45 @@ input[type="range"]::-moz-range-thumb {
   color: var(--espresso-2); opacity: .55; letter-spacing: .05em;
 }
 
+/* ---------- Yeast-type segmented control ---------- */
+.yeast-seg {
+  display: flex;
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  overflow: hidden;
+}
+.seg-btn {
+  flex: 1;
+  padding: 10px 6px;
+  background: var(--cream);
+  border: none;
+  border-right: 1px solid var(--rule);
+  font-family: 'Karla', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .09em;
+  color: var(--espresso-2);
+  cursor: pointer;
+  transition: background .15s, color .15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.seg-btn:last-child { border-right: none; }
+.seg-btn.active {
+  background: var(--terracotta);
+  color: var(--paper);
+}
+.seg-hint {
+  font-family: 'Fraunces', serif;
+  font-style: italic;
+  font-size: 12px;
+  color: var(--espresso-2);
+  opacity: .65;
+  margin-top: 9px;
+  text-align: center;
+  line-height: 1.4;
+}
+
 /* ---------- Toggle switches ---------- */
 .toggle-row {
   display: flex; justify-content: space-between; align-items: center;
