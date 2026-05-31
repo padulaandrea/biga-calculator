@@ -46,6 +46,7 @@
     useProRow:          $('useProRow'),
     proReadout:         $('proReadout'),
     tempHint:           $('tempHint'),
+    yeastHint:          $('yeastHint'),
   };
 
   // ---- Yeast type state ----
@@ -499,13 +500,14 @@
   calc();
 
   // ---- Yeast type segmented control ----
-  const yeastHintEl = document.getElementById('yeastHint');
+  // NOTE: yeastHint lives in out.yeastHint (initialised above) so syncYeastSeg()
+  // can be called safely before this block runs.
   document.querySelectorAll('.seg-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.seg-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentYeastType = btn.dataset.yeast;
-      yeastHintEl.textContent = YEAST[currentYeastType].hint;
+      out.yeastHint.textContent = YEAST[currentYeastType].hint;
       calc();
     });
   });
@@ -514,7 +516,7 @@
     document.querySelectorAll('.seg-btn').forEach(b => {
       b.classList.toggle('active', b.dataset.yeast === currentYeastType);
     });
-    yeastHintEl.textContent = YEAST[currentYeastType].hint;
+    out.yeastHint.textContent = YEAST[currentYeastType].hint;
   }
 
   // ---- Share button ----
