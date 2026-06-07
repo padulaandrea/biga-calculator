@@ -184,7 +184,7 @@
     "source": "Instagram Christian",
     "url": null,
     "bigaHyd": 60,
-    "yeastPct": 1.0,
+    "yeastPct": 0.6,
     "flourTemp": 20,
     "waterTemp": 8,
     "useRT": false,
@@ -208,5 +208,35 @@
     "restTemp": 4,
     "expectedHours": { "min": 48, "max": 48 },
     "notes": "Very low yeast (0.4%) with cold rest. Model (1% yeast) will predict much shorter time — large known gap."
+  },
+  {
+    "id": 15,
+    "source": "RICETTA BIGA LUNGA DEFINITIVA la pizza di AURELIO VISCIOTTI con il WITT ETNA ROTANTE",
+    "url": null,
+    "bigaHyd": 50,
+    "yeastPct": 0.25,
+    "flourTemp": 20,
+    "waterTemp": 20,
+    "useRT": true,
+    "rtHours": 1.5,
+    "rtTemp": 20,
+    "restTemp": 5,
+    "expectedHours": { "min": 72, "max": 74 },
+    "notes": "Very low yeast (0.25%). 1.5h kickstart at RT then 72h cold rest at 5°C. Very long fermentation — model expected to underestimate significantly."
+  },
+  {
+    "id": 16,
+    "source": "Ricetta INFALLIBILE PIZZA CONTEMPORANEA: CORNICIONI GIGANTI di Vincenzo Abbate",
+    "url": null,
+    "bigaHyd": 50,
+    "yeastPct": 0.7,
+    "flourTemp": 20,
+    "waterTemp": 20,
+    "useRT": false,
+    "rtHours": 0,
+    "rtTemp": 20,
+    "restTemp": 5,
+    "expectedHours": { "min": 22, "max": 24 },
+    "notes": "24h cold rest at 5°C, no kickstart."
   }
 ]
