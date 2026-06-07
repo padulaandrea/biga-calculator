@@ -32,7 +32,7 @@ function bigaHours(tempC, hydrationPct, yeastPct) {
   //     effect on fermentation time. The boost tapers to 0 at 0.7% so recipes
   //     at or above that threshold are unaffected.
   const coldFrac    = Math.max(0, Math.min(1, (18 - tempC) / 18));
-  const extraSlope  = Math.max(0, 1.5 * (0.7 - yeastPct) / 0.7);  // 0 at ≥0.7%, 1.5 at 0%
+  const extraSlope  = Math.max(0, 1.75 * (0.7 - yeastPct) / 0.7); // 0 at ≥0.7%, 1.75 at 0%
   const yeastExp    = 0.1 + (0.5 + extraSlope) * coldFrac;
   const yeastFactor = Math.pow(1.0 / yeastPct, yeastExp);
   return 16 * tempFactor * hydrationFactor * yeastFactor;
