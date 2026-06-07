@@ -23,9 +23,18 @@ function bigaHours(tempC, hydrationPct, yeastPct) {
   const q10 = tempC <= 18 ? 1.40 : 1.6;
   const tempFactor    = Math.pow(q10, (18 - tempC) / 10);
   const hydrationFactor = Math.exp((50 - hydrationPct) * 0.01);
-  const yeastFactor   = Math.pow(1.0 / yeastPct, 0.1);  // sub-linear: halving yeast adds ~7% not 2×
-  // Exponent 0.1 calibrated against real recipes: yeast reproduction during fermentation
-  // strongly dampens the effect of initial inoculum, especially at warm temperatures.
+  // Yeast exponent is temperature- AND concentration-dependent:
+  //   At warm temps (≥18°C): exponent = 0.1 — yeast reproduces rapidly, initial
+  //     inoculum barely matters (baker just waits for peak).
+  //   At cold temps (→0°C): base exponent → 0.6 — cold stops reproduction.
+  //   Below 0.7% yeast: an extra boost kicks in — at very low inocula the lag
+  //     phase dominates and each halving of yeast has a much larger-than-linear
+  //     effect on fermentation time. The boost tapers to 0 at 0.7% so recipes
+  //     at or above that threshold are unaffected.
+  const coldFrac    = Math.max(0, Math.min(1, (18 - tempC) / 18));
+  const extraSlope  = Math.max(0, 1.5 * (0.7 - yeastPct) / 0.7);  // 0 at ≥0.7%, 1.5 at 0%
+  const yeastExp    = 0.1 + (0.5 + extraSlope) * coldFrac;
+  const yeastFactor = Math.pow(1.0 / yeastPct, yeastExp);
   return 16 * tempFactor * hydrationFactor * yeastFactor;
 }
 
@@ -107,10 +116,19 @@ function computeSchedule(startTime, hydPct, useHybrid, rtTempC, rtHours, mainTem
     };
   }
 
+  // Effective yeast at start of cold phase: yeast doubled during warm kickstart.
+  // Doubling time ≈ 1.5h at 20°C; Q10_growth ≈ 2 (halves per 10°C drop).
+  // Cap at 2.0% — substrate-limited (beyond this, competition effects dominate).
+  const doublingAtRT = 1.5 * Math.pow(2, (20 - rtTempC) / 10);
+  // Cap at 1.0%: kickstart can lift low-yeast biga toward the calibrated 1% baseline,
+  // but never above it — allowing >1% would make cold fermentation faster than the
+  // calibrated anchor, causing systematic underprediction for kickstart recipes.
+  const coldYeastPct = Math.min(1.0, yeastPct * Math.pow(2, rtHours / doublingAtRT));
+
   // Phase 2: cold storage — biga continues cooling from wherever phase 1 left it
   const rtEnd = t;
   while (progress < 1 && t < 200) {
-    const rate = 1 / bigaHours(temp, hydPct, yeastPct);
+    const rate = 1 / bigaHours(temp, hydPct, coldYeastPct);
     progress += rate * dt;
     temp += (mainTempC - temp) * (dt / tau);
     t += dt;
