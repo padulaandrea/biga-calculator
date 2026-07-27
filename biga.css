@@ -680,18 +680,16 @@ footer {
 }
 .bs-mini-track {
   display: none;
-  width: 56px; height: 5px;
-  background: var(--tan-light);
+  width: 64px; height: 6px;
   border-radius: 3px;
-  overflow: hidden;
   flex-shrink: 0;
-}
-.bs-mini-fill {
-  display: block;
-  height: 100%;
-  background: var(--terracotta);
-  border-radius: 3px;
-  transition: width .08s;
+  background: linear-gradient(
+    to right,
+    var(--terracotta) 0%,
+    var(--terracotta) var(--fill, 50%),
+    var(--tan-light)  var(--fill, 50%),
+    var(--tan-light)  100%
+  );
 }
 .bs-trigger { -webkit-tap-highlight-color: transparent; }
 

@@ -152,7 +152,7 @@
     const max = parseFloat(el.max) || 100;
     const pct = ((parseFloat(el.value) - min) / (max - min) * 100).toFixed(2) + '%';
     el.style.setProperty('--fill', pct);
-    if (el._miniFill) el._miniFill.style.width = pct;
+    if (el._miniTrack) el._miniTrack.style.setProperty('--fill', pct);
   }
   function updateAllSliderFills() {
     document.querySelectorAll('input[type="range"]').forEach(updateSliderFill);
@@ -594,13 +594,10 @@
       bsRight.className = 'bs-right';
       valEl.parentNode.insertBefore(bsRight, valEl);
 
-      // Mini track: shows slider affordance on mobile before the sheet opens
+      // Mini track: shows slider position on mobile before the sheet opens
       const miniTrack = document.createElement('span');
       miniTrack.className = 'bs-mini-track';
-      const miniFill = document.createElement('span');
-      miniFill.className = 'bs-mini-fill';
-      miniTrack.appendChild(miniFill);
-      input._miniFill = miniFill;
+      input._miniTrack = miniTrack;
       bsRight.appendChild(miniTrack);
 
       bsRight.appendChild(valEl);
