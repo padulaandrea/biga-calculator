@@ -670,12 +670,27 @@ footer {
   color: var(--espresso-2); opacity: .55;
 }
 .bs-right {
-  display: inline-flex; align-items: baseline;
-  gap: 6px; flex-shrink: 0;
+  display: inline-flex; align-items: center;
+  gap: 8px; flex-shrink: 0;
 }
 .bs-chevron {
   display: none;
   color: var(--terracotta); font-size: 20px; opacity: .7; line-height: 1;
+}
+.bs-mini-track {
+  display: none;
+  width: 40px; height: 3px;
+  background: var(--tan-light);
+  border-radius: 2px;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.bs-mini-fill {
+  height: 100%;
+  background: var(--terracotta);
+  opacity: .55;
+  border-radius: 2px;
+  transition: width .08s;
 }
 .bs-trigger { -webkit-tap-highlight-color: transparent; }
 
@@ -779,10 +794,10 @@ footer {
   /* Align label row center (chevron is taller than baseline text) */
   .section-label { align-items: center; }
 
-  /* Show chevron and make row tappable */
+  /* Show chevron, mini track, and make row tappable */
   .bs-trigger { cursor: pointer; }
   .bs-chevron { display: inline-flex; align-items: center; }
-  .bs-right { align-items: center; }
+  .bs-mini-track { display: block; }
 
   /* Give the whole label row a bit more breathing room */
   .section { margin-bottom: 20px; }

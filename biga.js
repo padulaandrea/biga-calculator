@@ -152,6 +152,7 @@
     const max = parseFloat(el.max) || 100;
     const pct = ((parseFloat(el.value) - min) / (max - min) * 100).toFixed(2) + '%';
     el.style.setProperty('--fill', pct);
+    if (el._miniFill) el._miniFill.style.width = pct;
   }
   function updateAllSliderFills() {
     document.querySelectorAll('input[type="range"]').forEach(updateSliderFill);
@@ -587,10 +588,20 @@
       const valEl    = section && section.querySelector('.label-value');
       if (!labelEl || !valEl) return;
 
-      // Wrap [value ›] in .bs-right so they move together
+      // Wrap [mini-track · value · ›] in .bs-right so they move together
       const bsRight = document.createElement('span');
       bsRight.className = 'bs-right';
       valEl.parentNode.insertBefore(bsRight, valEl);
+
+      // Mini track: shows slider affordance on mobile before the sheet opens
+      const miniTrack = document.createElement('span');
+      miniTrack.className = 'bs-mini-track';
+      const miniFill = document.createElement('span');
+      miniFill.className = 'bs-mini-fill';
+      miniTrack.appendChild(miniFill);
+      input._miniFill = miniFill;
+      bsRight.appendChild(miniTrack);
+
       bsRight.appendChild(valEl);
       const chevron = document.createElement('span');
       chevron.className = 'bs-chevron';
