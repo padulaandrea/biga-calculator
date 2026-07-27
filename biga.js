@@ -340,8 +340,9 @@
 
     const totalDough = N * W;
 
-    // baker's percentages
-    const flour      = totalDough / (1 + totalHyd + saltPct + oilPct + maltPct);
+    // baker's percentages — flour and water are derived from hydration only,
+    // so salt/oil/malt never affect the flour or water amounts
+    const flour      = totalDough / (1 + totalHyd);
     const totalWater = flour * totalHyd;
     const salt       = flour * saltPct;
     const oil        = flour * oilPct;
