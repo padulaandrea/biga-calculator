@@ -641,21 +641,38 @@ footer {
   width: 40px; height: 4px;
   background: var(--tan-light);
   border-radius: 2px;
-  margin: 14px auto 20px;
+  margin: 14px auto 16px;
 }
-.bs-close {
-  position: absolute; top: 16px; right: 22px;
-  width: 32px; height: 32px;
-  border: none; background: var(--cream-soft); border-radius: 50%;
-  color: var(--espresso); font-size: 15px; cursor: pointer;
+.bs-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+.bs-cancel, .bs-confirm {
+  width: 38px; height: 38px;
+  border: none; border-radius: 50%;
+  font-size: 18px; cursor: pointer;
   display: flex; align-items: center; justify-content: center;
-  -webkit-tap-highlight-color: transparent; transition: background .15s;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .15s, transform .1s;
+  flex-shrink: 0;
 }
-.bs-close:active { background: var(--tan-light); }
+.bs-cancel {
+  background: var(--cream-soft);
+  color: var(--espresso-2);
+}
+.bs-cancel:active { background: var(--tan-light); }
+.bs-confirm {
+  background: var(--terracotta);
+  color: var(--paper);
+}
+.bs-confirm:active { background: var(--terracotta-d); transform: scale(.92); }
 .bs-label-text {
-  font-family: 'Karla', sans-serif; font-size: 12px; font-weight: 500;
-  text-transform: uppercase; letter-spacing: .12em;
-  color: var(--espresso-2); opacity: .65; margin-bottom: 8px;
+  font-family: 'Karla', sans-serif; font-size: 11px; font-weight: 600;
+  text-transform: uppercase; letter-spacing: .14em;
+  color: var(--espresso-2); opacity: .6;
+  text-align: center; flex: 1; padding: 0 8px;
 }
 .bs-value-display {
   font-family: 'Fraunces', serif; font-size: 52px; font-weight: 500;

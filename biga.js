@@ -505,14 +505,34 @@
   function initBottomSheet() {
     const isMobile = () => window.matchMedia('(max-width: 880px)').matches;
 
+    // Format functions mirror updateLabels() so the sheet displays correctly
+    // without running a full calc() on every drag.
+    const fmtFns = {
+      bigaHyd:   v => `${v}%`,
+      temp:      v => `${v}°C`,
+      rtTemp:    v => `${v}°C`,
+      rtHours:   v => `${parseFloat(v).toFixed(1)} h`,
+      flourTemp: v => `${v}°C`,
+      waterTemp: v => `${v}°C`,
+      yeastPct:  v => `${parseFloat(v).toFixed(2)}%`,
+      bigaPct:   v => `${v}%`,
+      totalHyd:  v => `${v}%`,
+      salt:      v => `${parseFloat(v).toFixed(1)}%`,
+      oil:       v => `${parseFloat(v).toFixed(1)}%`,
+      malt:      v => `${parseFloat(v).toFixed(2)}%`,
+    };
+
     // One shared overlay appended to body
     const overlay = document.createElement('div');
     overlay.className = 'bs-overlay';
     overlay.innerHTML = `
       <div class="bs-sheet">
         <div class="bs-handle"></div>
-        <button class="bs-close" aria-label="Close">✕</button>
-        <div class="bs-label-text" id="bs-label"></div>
+        <div class="bs-sheet-header">
+          <button class="bs-cancel" aria-label="Cancel">✕</button>
+          <div class="bs-label-text" id="bs-label"></div>
+          <button class="bs-confirm" aria-label="Confirm">✓</button>
+        </div>
         <div class="bs-value-display" id="bs-value"></div>
         <input type="range" class="bs-slider" id="bs-slider" />
         <div class="bs-range-bounds">
@@ -522,13 +542,14 @@
       </div>`;
     document.body.appendChild(overlay);
 
-    const sheet    = overlay.querySelector('.bs-sheet');
-    const bsClose  = overlay.querySelector('.bs-close');
-    const bsLabel  = overlay.querySelector('#bs-label');
-    const bsValue  = overlay.querySelector('#bs-value');
-    const bsSlider = overlay.querySelector('#bs-slider');
-    const bsMin    = overlay.querySelector('#bs-min');
-    const bsMax    = overlay.querySelector('#bs-max');
+    const sheet     = overlay.querySelector('.bs-sheet');
+    const bsCancel  = overlay.querySelector('.bs-cancel');
+    const bsConfirm = overlay.querySelector('.bs-confirm');
+    const bsLabel   = overlay.querySelector('#bs-label');
+    const bsValue   = overlay.querySelector('#bs-value');
+    const bsSlider  = overlay.querySelector('#bs-slider');
+    const bsMin     = overlay.querySelector('#bs-min');
+    const bsMax     = overlay.querySelector('#bs-max');
 
     let currentSource = null;
     let savedScrollY  = 0;
@@ -560,8 +581,7 @@
       overlay.classList.add('bs-open');
     }
 
-    function closeSheet() {
-      if (!currentSource) return;
+    function dismissSheet() {
       currentSource = null;
       overlay.classList.remove('bs-open');
       Object.assign(document.body.style, {
@@ -570,15 +590,23 @@
       window.scrollTo(0, savedScrollY);
     }
 
-    // Sheet slider → source input → calc() → read formatted value back
-    bsSlider.addEventListener('input', () => {
+    function confirmSheet() {
       if (!currentSource) return;
       currentSource.value = bsSlider.value;
       currentSource.dispatchEvent(new Event('input', { bubbles: true }));
+      dismissSheet();
+    }
+
+    function cancelSheet() {
+      dismissSheet();
+    }
+
+    // Slider moves: update sheet display only — source input unchanged until confirm
+    bsSlider.addEventListener('input', () => {
+      if (!currentSource) return;
+      const fmt = fmtFns[currentSource.id] || (v => v);
+      bsValue.textContent = fmt(bsSlider.value);
       updateSliderFill(bsSlider);
-      const labelValEl = currentSource.closest('.section') &&
-        currentSource.closest('.section').querySelector('.label-value');
-      if (labelValEl) bsValue.textContent = labelValEl.textContent;
     });
 
     // Decorate each section range with a chevron and wire the row as a trigger
@@ -617,13 +645,13 @@
       });
     });
 
-    // Close triggers
-    bsClose.addEventListener('click', closeSheet);
-    overlay.addEventListener('click', e => { if (e.target === overlay) closeSheet(); });
-    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
-    // Close if viewport expands past mobile breakpoint (e.g. rotation)
+    // Confirm / cancel triggers
+    bsConfirm.addEventListener('click', confirmSheet);
+    bsCancel.addEventListener('click', cancelSheet);
+    overlay.addEventListener('click', e => { if (e.target === overlay) cancelSheet(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') cancelSheet(); });
     window.matchMedia('(max-width: 880px)').addEventListener('change', e => {
-      if (!e.matches) closeSheet();
+      if (!e.matches) cancelSheet();
     });
 
     // Prevent backdrop touchmove from scrolling the page behind the sheet
