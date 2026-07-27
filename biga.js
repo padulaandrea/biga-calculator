@@ -496,8 +496,63 @@
     el.addEventListener('input', calc);
     el.addEventListener('change', calc);
   });
+
+  // ---- Mobile steppers: swap every range slider for − / + buttons ----
+  // On touch screens, sliders fire mid-scroll and mess up the recipe.
+  // We keep the hidden <input type=range> as the source of truth and just
+  // drive it from buttons, so all existing calc() logic stays untouched.
+  function initSteppers() {
+    document.querySelectorAll('.section input[type="range"]').forEach(input => {
+      const section  = input.closest('.section');
+      const labelVal = section && section.querySelector('.label-value');
+      if (!labelVal) return;
+
+      const minus = document.createElement('button');
+      minus.type = 'button'; minus.className = 'step-btn';
+      minus.setAttribute('aria-label', 'decrease'); minus.textContent = '−';
+
+      const plus = document.createElement('button');
+      plus.type = 'button'; plus.className = 'step-btn';
+      plus.setAttribute('aria-label', 'increase'); plus.textContent = '+';
+
+      // Wrap [−] [value] [+] together so the section-label flex stays clean
+      const group = document.createElement('div');
+      group.className = 'stepper-group';
+      labelVal.parentNode.insertBefore(group, labelVal);
+      group.appendChild(minus);
+      group.appendChild(labelVal);
+      group.appendChild(plus);
+
+      function step(dir) {
+        const min = parseFloat(input.min);
+        const max = parseFloat(input.max);
+        const s   = parseFloat(input.step) || 1;
+        const dec = (s.toString().split('.')[1] || '').length;
+        const next = parseFloat((parseFloat(input.value) + dir * s).toFixed(dec));
+        input.value = Math.min(max, Math.max(min, next));
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
+
+      // Tap: single step. Hold: repeat after 400 ms, then every 120 ms.
+      function bindHold(btn, dir) {
+        let timer;
+        const start = () => {
+          step(dir);
+          timer = setTimeout(() => { timer = setInterval(() => step(dir), 120); }, 400);
+        };
+        const stop = () => clearTimeout(timer) || clearInterval(timer);
+        btn.addEventListener('pointerdown', start);
+        btn.addEventListener('pointerup',   stop);
+        btn.addEventListener('pointerout',  stop);
+      }
+      bindHold(minus, -1);
+      bindHold(plus,  +1);
+    });
+  }
+
   readFromURL();
   syncYeastSeg();
+  initSteppers();
   calc();
 
   // ---- Yeast type segmented control ----

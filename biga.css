@@ -702,6 +702,49 @@ footer {
 
   /* Smaller value readout inside collapsed sections */
   .controls-collapse .label-value { font-size: 17px; }
+
+  /* ---- Stepper controls (replace sliders on touch screens) ---- */
+  /* Hide slider track + min/max labels — steppers take over */
+  .section > input[type="range"],
+  .section .range-bounds { display: none !important; }
+
+  /* Align label row center (buttons are taller than baseline text) */
+  .section-label { align-items: center; }
+
+  /* Show the stepper buttons */
+  .step-btn { display: flex; }
+
+  /* Give the whole label row a bit more breathing room */
+  .section { margin-bottom: 20px; }
+  .section-label { margin-bottom: 0; }
+}
+
+/* ---- Stepper base styles (hidden on desktop) ---- */
+.stepper-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.step-btn {
+  display: none;          /* shown only inside the ≤880px block above */
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border: 1.5px solid var(--terracotta);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--terracotta);
+  font-size: 20px; font-weight: 400; line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;   /* no double-tap zoom */
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .12s, color .12s;
+  flex-shrink: 0;
+}
+.step-btn:active {
+  background: var(--terracotta);
+  color: var(--paper);
 }
 
 /* ---------- Print ---------- */
