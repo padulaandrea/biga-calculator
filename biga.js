@@ -497,62 +497,135 @@
     el.addEventListener('change', calc);
   });
 
-  // ---- Mobile steppers: swap every range slider for − / + buttons ----
+  // ---- Bottom sheet: tap-to-adjust UX for mobile ----
   // On touch screens, sliders fire mid-scroll and mess up the recipe.
-  // We keep the hidden <input type=range> as the source of truth and just
-  // drive it from buttons, so all existing calc() logic stays untouched.
-  function initSteppers() {
+  // Each control row becomes a tap target that slides up a panel with a
+  // full-width slider — isolated from page scroll so one drag sets any value.
+  function initBottomSheet() {
+    const isMobile = () => window.matchMedia('(max-width: 880px)').matches;
+
+    // One shared overlay appended to body
+    const overlay = document.createElement('div');
+    overlay.className = 'bs-overlay';
+    overlay.innerHTML = `
+      <div class="bs-sheet">
+        <div class="bs-handle"></div>
+        <button class="bs-close" aria-label="Close">✕</button>
+        <div class="bs-label-text" id="bs-label"></div>
+        <div class="bs-value-display" id="bs-value"></div>
+        <input type="range" class="bs-slider" id="bs-slider" />
+        <div class="bs-range-bounds">
+          <span id="bs-min"></span>
+          <span id="bs-max"></span>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+
+    const sheet    = overlay.querySelector('.bs-sheet');
+    const bsClose  = overlay.querySelector('.bs-close');
+    const bsLabel  = overlay.querySelector('#bs-label');
+    const bsValue  = overlay.querySelector('#bs-value');
+    const bsSlider = overlay.querySelector('#bs-slider');
+    const bsMin    = overlay.querySelector('#bs-min');
+    const bsMax    = overlay.querySelector('#bs-max');
+
+    let currentSource = null;
+    let savedScrollY  = 0;
+
+    function openSheet(sourceInput) {
+      if (currentSource === sourceInput) return;
+      currentSource = sourceInput;
+
+      const section     = sourceInput.closest('.section');
+      const labelTextEl = section && section.querySelector('.label-text');
+      const labelValEl  = section && section.querySelector('.label-value');
+      const bounds      = section && section.querySelectorAll('.range-bounds span');
+
+      bsLabel.textContent  = labelTextEl ? labelTextEl.textContent : '';
+      bsSlider.min         = sourceInput.min;
+      bsSlider.max         = sourceInput.max;
+      bsSlider.step        = sourceInput.step;
+      bsSlider.value       = sourceInput.value;
+      bsValue.textContent  = labelValEl ? labelValEl.textContent : sourceInput.value;
+      bsMin.textContent    = bounds && bounds[0] ? bounds[0].textContent : '';
+      bsMax.textContent    = bounds && bounds[1] ? bounds[1].textContent : '';
+      updateSliderFill(bsSlider);
+
+      savedScrollY = window.scrollY;
+      Object.assign(document.body.style, {
+        overflow: 'hidden', position: 'fixed',
+        top: `-${savedScrollY}px`, width: '100%',
+      });
+      overlay.classList.add('bs-open');
+    }
+
+    function closeSheet() {
+      if (!currentSource) return;
+      currentSource = null;
+      overlay.classList.remove('bs-open');
+      Object.assign(document.body.style, {
+        overflow: '', position: '', top: '', width: '',
+      });
+      window.scrollTo(0, savedScrollY);
+    }
+
+    // Sheet slider → source input → calc() → read formatted value back
+    bsSlider.addEventListener('input', () => {
+      if (!currentSource) return;
+      currentSource.value = bsSlider.value;
+      currentSource.dispatchEvent(new Event('input', { bubbles: true }));
+      updateSliderFill(bsSlider);
+      const labelValEl = currentSource.closest('.section') &&
+        currentSource.closest('.section').querySelector('.label-value');
+      if (labelValEl) bsValue.textContent = labelValEl.textContent;
+    });
+
+    // Decorate each section range with a chevron and wire the row as a trigger
     document.querySelectorAll('.section input[type="range"]').forEach(input => {
       const section  = input.closest('.section');
-      const labelVal = section && section.querySelector('.label-value');
-      if (!labelVal) return;
+      const labelEl  = section && section.querySelector('.section-label');
+      const valEl    = section && section.querySelector('.label-value');
+      if (!labelEl || !valEl) return;
 
-      const minus = document.createElement('button');
-      minus.type = 'button'; minus.className = 'step-btn';
-      minus.setAttribute('aria-label', 'decrease'); minus.textContent = '−';
+      // Wrap [value ›] in .bs-right so they move together
+      const bsRight = document.createElement('span');
+      bsRight.className = 'bs-right';
+      valEl.parentNode.insertBefore(bsRight, valEl);
+      bsRight.appendChild(valEl);
+      const chevron = document.createElement('span');
+      chevron.className = 'bs-chevron';
+      chevron.setAttribute('aria-hidden', 'true');
+      chevron.textContent = '›';
+      bsRight.appendChild(chevron);
 
-      const plus = document.createElement('button');
-      plus.type = 'button'; plus.className = 'step-btn';
-      plus.setAttribute('aria-label', 'increase'); plus.textContent = '+';
-
-      // Wrap [−] [value] [+] together so the section-label flex stays clean
-      const group = document.createElement('div');
-      group.className = 'stepper-group';
-      labelVal.parentNode.insertBefore(group, labelVal);
-      group.appendChild(minus);
-      group.appendChild(labelVal);
-      group.appendChild(plus);
-
-      function step(dir) {
-        const min = parseFloat(input.min);
-        const max = parseFloat(input.max);
-        const s   = parseFloat(input.step) || 1;
-        const dec = (s.toString().split('.')[1] || '').length;
-        const next = parseFloat((parseFloat(input.value) + dir * s).toFixed(dec));
-        input.value = Math.min(max, Math.max(min, next));
-        input.dispatchEvent(new Event('input', { bubbles: true }));
-      }
-
-      // Tap: single step. Hold: repeat after 400 ms, then every 120 ms.
-      function bindHold(btn, dir) {
-        let timer;
-        const start = () => {
-          step(dir);
-          timer = setTimeout(() => { timer = setInterval(() => step(dir), 120); }, 400);
-        };
-        const stop = () => clearTimeout(timer) || clearInterval(timer);
-        btn.addEventListener('pointerdown', start);
-        btn.addEventListener('pointerup',   stop);
-        btn.addEventListener('pointerout',  stop);
-      }
-      bindHold(minus, -1);
-      bindHold(plus,  +1);
+      labelEl.classList.add('bs-trigger');
+      labelEl.addEventListener('click', () => {
+        if (!isMobile()) return;
+        // Don't open if parent collapsible panel is collapsed
+        const collapse = input.closest('.controls-collapse');
+        if (collapse && !collapse.classList.contains('visible')) return;
+        openSheet(input);
+      });
     });
+
+    // Close triggers
+    bsClose.addEventListener('click', closeSheet);
+    overlay.addEventListener('click', e => { if (e.target === overlay) closeSheet(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSheet(); });
+    // Close if viewport expands past mobile breakpoint (e.g. rotation)
+    window.matchMedia('(max-width: 880px)').addEventListener('change', e => {
+      if (!e.matches) closeSheet();
+    });
+
+    // Prevent backdrop touchmove from scrolling the page behind the sheet
+    overlay.addEventListener('touchmove', e => {
+      if (!sheet.contains(e.target)) e.preventDefault();
+    }, { passive: false });
   }
 
   readFromURL();
   syncYeastSeg();
-  initSteppers();
+  initBottomSheet();
   calc();
 
   // ---- Yeast type segmented control ----
