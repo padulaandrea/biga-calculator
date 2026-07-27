@@ -675,22 +675,21 @@ footer {
 }
 .bs-chevron {
   display: none;
-  color: var(--terracotta); opacity: .75; line-height: 0;
+  color: var(--terracotta); font-size: 20px; opacity: .7; line-height: 1;
   flex-shrink: 0;
 }
 .bs-mini-track {
   display: none;
-  width: 40px; height: 3px;
+  width: 56px; height: 5px;
   background: var(--tan-light);
-  border-radius: 2px;
+  border-radius: 3px;
   overflow: hidden;
   flex-shrink: 0;
 }
 .bs-mini-fill {
   height: 100%;
   background: var(--terracotta);
-  opacity: .55;
-  border-radius: 2px;
+  border-radius: 3px;
   transition: width .08s;
 }
 .bs-trigger { -webkit-tap-highlight-color: transparent; }
