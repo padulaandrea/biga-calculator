@@ -611,6 +611,35 @@ footer {
   font-size: 13px; color: var(--espresso-2); opacity: .55;
 }
 
+/* ---- Stepper controls ---- */
+/* Base styles — buttons are hidden on desktop, shown inside the ≤880px block below */
+.stepper-group {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.step-btn {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px; height: 36px;
+  border: 1.5px solid var(--terracotta);
+  border-radius: 5px;
+  background: transparent;
+  color: var(--terracotta);
+  font-size: 20px; font-weight: 400; line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  transition: background .12s, color .12s;
+  flex-shrink: 0;
+}
+.step-btn:active {
+  background: var(--terracotta);
+  color: var(--paper);
+}
+
 /* ---------- Mobile tabs ---------- */
 .mobile-tabs { display: none; }
 
@@ -717,34 +746,6 @@ footer {
   /* Give the whole label row a bit more breathing room */
   .section { margin-bottom: 20px; }
   .section-label { margin-bottom: 0; }
-}
-
-/* ---- Stepper base styles (hidden on desktop) ---- */
-.stepper-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-.step-btn {
-  display: none;          /* shown only inside the ≤880px block above */
-  align-items: center;
-  justify-content: center;
-  width: 36px; height: 36px;
-  border: 1.5px solid var(--terracotta);
-  border-radius: 5px;
-  background: transparent;
-  color: var(--terracotta);
-  font-size: 20px; font-weight: 400; line-height: 1;
-  cursor: pointer;
-  touch-action: manipulation;   /* no double-tap zoom */
-  user-select: none;
-  -webkit-tap-highlight-color: transparent;
-  transition: background .12s, color .12s;
-  flex-shrink: 0;
-}
-.step-btn:active {
-  background: var(--terracotta);
-  color: var(--paper);
 }
 
 /* ---------- Print ---------- */
