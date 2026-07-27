@@ -687,6 +687,7 @@ footer {
   flex-shrink: 0;
 }
 .bs-mini-fill {
+  display: block;
   height: 100%;
   background: var(--terracotta);
   border-radius: 3px;
