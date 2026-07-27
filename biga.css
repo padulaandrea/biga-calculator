@@ -795,12 +795,27 @@ footer {
   /* Align label row center (chevron is taller than baseline text) */
   .section-label { align-items: center; }
 
-  /* Show chevron, mini track, and make row tappable */
-  .bs-trigger { cursor: pointer; }
+  /* Show chevron + mini track */
   .bs-chevron { display: inline-flex; align-items: center; }
   .bs-mini-track { display: block; }
 
-  /* Give the whole label row a bit more breathing room */
+  /* Adjustable rows: render as tappable cards */
+  .bs-trigger {
+    cursor: pointer;
+    background: var(--cream-soft);
+    border: 1px solid var(--rule);
+    border-radius: 8px;
+    padding: 13px 14px;
+    margin-bottom: 0;
+    transition: border-color .15s, background .15s;
+  }
+  .bs-trigger:active {
+    background: var(--cream);
+    border-color: var(--terracotta);
+  }
+
+  /* Tighter section spacing — cards provide their own visual rhythm */
+  .has-bs-trigger { margin-bottom: 10px; }
   .section { margin-bottom: 20px; }
   .section-label { margin-bottom: 0; }
 }

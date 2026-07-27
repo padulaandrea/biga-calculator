@@ -587,6 +587,7 @@
       const labelEl  = section && section.querySelector('.section-label');
       const valEl    = section && section.querySelector('.label-value');
       if (!labelEl || !valEl) return;
+      section.classList.add('has-bs-trigger');
 
       // Wrap [mini-track · value · ›] in .bs-right so they move together
       const bsRight = document.createElement('span');
