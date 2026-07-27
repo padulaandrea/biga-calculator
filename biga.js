@@ -606,7 +606,14 @@
       const chevron = document.createElement('span');
       chevron.className = 'bs-chevron';
       chevron.setAttribute('aria-hidden', 'true');
-      chevron.textContent = '›';
+      chevron.innerHTML = `<svg width="18" height="14" viewBox="0 0 18 14" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <line x1="1" y1="2"  x2="17" y2="2"  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+        <circle cx="13" cy="2"  r="2.5" fill="currentColor"/>
+        <line x1="1" y1="7"  x2="17" y2="7"  stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+        <circle cx="5"  cy="7"  r="2.5" fill="currentColor"/>
+        <line x1="1" y1="12" x2="17" y2="12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" opacity="0.4"/>
+        <circle cx="11" cy="12" r="2.5" fill="currentColor"/>
+      </svg>`;
       bsRight.appendChild(chevron);
 
       labelEl.classList.add('bs-trigger');

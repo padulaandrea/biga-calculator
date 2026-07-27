@@ -675,7 +675,8 @@ footer {
 }
 .bs-chevron {
   display: none;
-  color: var(--terracotta); font-size: 20px; opacity: .7; line-height: 1;
+  color: var(--terracotta); opacity: .75; line-height: 0;
+  flex-shrink: 0;
 }
 .bs-mini-track {
   display: none;
